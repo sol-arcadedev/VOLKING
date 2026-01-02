@@ -1,0 +1,208 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-retro-black text-retro-white;
+    font-family: 'VT323', monospace;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  * {
+    image-rendering: pixelated;
+  }
+}
+
+@layer utilities {
+  .text-shadow-retro {
+    text-shadow: 2px 2px 0px #000000;
+  }
+}
+
+/* Classic Pixel Scrollbar */
+::-webkit-scrollbar {
+  width: 16px;
+  background: #000000;
+}
+
+::-webkit-scrollbar-track {
+  background: #000000;
+  border: 2px solid #4CAF50;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4CAF50;
+  border: 2px solid #000000;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #66BB6A;
+}
+
+/* Old-School Buttons */
+.btn-retro-green {
+  padding: 12px 24px;
+  background: #4CAF50;
+  border: 4px solid #000000;
+  color: #000000;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-family: 'Press Start 2P', cursive;
+  box-shadow: 4px 4px 0px 0px #000000;
+  transition: all 0.1s;
+  cursor: pointer;
+}
+
+.btn-retro-green:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px 0px #000000;
+}
+
+.btn-retro-green:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0px 0px 0px 0px #000000;
+}
+
+.btn-retro-red {
+  padding: 12px 24px;
+  background: #E53935;
+  border: 4px solid #000000;
+  color: #FFFFFF;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-family: 'Press Start 2P', cursive;
+  box-shadow: 4px 4px 0px 0px #000000;
+  transition: all 0.1s;
+  cursor: pointer;
+}
+
+.btn-retro-red:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px 0px #000000;
+}
+
+/* Pixel Box */
+.pixel-box {
+  background: #000000;
+  border: 4px solid #4CAF50;
+  box-shadow: 4px 4px 0px 0px #388E3C;
+}
+
+.pixel-box-red {
+  background: #000000;
+  border: 4px solid #E53935;
+  box-shadow: 4px 4px 0px 0px #C62828;
+}
+
+/* Candle Styles */
+.candle {
+  border: 2px solid #000000;
+  position: relative;
+}
+
+.candle-green {
+  background: #4CAF50;
+}
+
+.candle-red {
+  background: #E53935;
+}
+
+.candle-wick {
+  background: #FFFFFF;
+  width: 2px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Grid Background */
+.retro-grid {
+  background-image:
+          linear-gradient(#1a1a1a 1px, transparent 1px),
+          linear-gradient(90deg, #1a1a1a 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Scanlines */
+.scanlines::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+          0deg,
+          rgba(0, 0, 0, 0.1),
+          rgba(0, 0, 0, 0.1) 1px,
+          transparent 1px,
+          transparent 2px
+  );
+  pointer-events: none;
+  z-index: 100;
+}
+
+/* Pixel Border Animation */
+@keyframes border-blink {
+  0%, 50% { border-color: #4CAF50; }
+  51%, 100% { border-color: #E53935; }
+}
+
+.border-blink {
+  animation: border-blink 1s infinite;
+}
+
+/* Simple Animations Only */
+@keyframes float-simple {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.float-simple {
+  animation: float-simple 3s ease-in-out infinite;
+}
+
+@keyframes rotate-simple {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(-2deg); }
+  75% { transform: rotate(2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.rotate-simple {
+  animation: rotate-simple 4s ease-in-out infinite;
+}
+
+/* Text Styles */
+.text-retro-green {
+  color: #4CAF50;
+  text-shadow: 2px 2px 0px #000000;
+}
+
+.text-retro-red {
+  color: #E53935;
+  text-shadow: 2px 2px 0px #000000;
+}
+
+.text-retro-white {
+  color: #FFFFFF;
+  text-shadow: 2px 2px 0px #000000;
+}
+
+/* Blink Effect */
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.blink {
+  animation: blink 1s steps(1) infinite;
+}
