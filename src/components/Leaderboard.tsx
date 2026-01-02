@@ -1,53 +1,48 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, TrendingUp, RefreshCw } from 'lucide-react';
 import { formatWallet, formatNumber } from '../utils/helpers';
-import { getCurrentRoundLeaderboard, getCurrentRoundStart, getNextRoundStart } from '../utils/solanaService';
-
-interface LeaderboardEntry {
-  wallet: string;
-  volume: number;
-  trades: number;
-  lastTrade?: number;
-}
+import { fetchLeaderboard, getCurrentRoundStart, getNextRoundStart, type VolumeData } from '../services/apiService';
 
 export const Leaderboard: React.FC = () => {
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [entries, setEntries] = useState<VolumeData[]>([]);
+  const [totalTraders, setTotalTraders] = useState(0);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [error, setError] = useState<string | null>(null);
   const [currentRoundStart, setCurrentRoundStart] = useState<number>(getCurrentRoundStart());
 
-  // Fetch leaderboard data
-  const fetchLeaderboard = async () => {
+  // Fetch leaderboard data from Railway backend
+  const fetchLeaderboardData = useCallback(async () => {
     try {
       setError(null);
-      console.log('Fetching leaderboard for current round...');
+      console.log('Fetching leaderboard from backend API...');
 
-      const leaderboardData = await getCurrentRoundLeaderboard();
+      const data = await fetchLeaderboard();
 
-      setEntries(leaderboardData);
+      setEntries(data.leaderboard);
+      setTotalTraders(data.totalTraders);
+      setCurrentRoundStart(data.roundStart);
       setLastUpdate(new Date());
-      setCurrentRoundStart(getCurrentRoundStart());
       setLoading(false);
 
-      console.log(`Leaderboard updated: ${leaderboardData.length} traders`);
-    } catch (error) {
-      console.error('Error fetching leaderboard:', error);
+      console.log(`Leaderboard updated: ${data.leaderboard.length} traders`);
+    } catch (err) {
+      console.error('Error fetching leaderboard:', err);
       setError('Failed to fetch leaderboard data');
       setLoading(false);
     }
-  };
+  }, []);
 
   // Initial fetch and set up polling
   useEffect(() => {
-    fetchLeaderboard();
+    fetchLeaderboardData();
 
     // Update every 10 seconds
-    const interval = setInterval(fetchLeaderboard, 10000);
+    const interval = setInterval(fetchLeaderboardData, 10000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchLeaderboardData]);
 
   // Calculate round information
   const nextRoundStart = getNextRoundStart();
@@ -56,9 +51,8 @@ export const Leaderboard: React.FC = () => {
 
   const totalVolume = entries.reduce((sum, e) => sum + e.volume, 0);
   const currentLeader = entries[0]?.wallet || '---';
-  const activeTraders = entries.length;
 
-  if (loading) {
+  if (loading && entries.length === 0) {
     return (
         <section id="leaderboard" className="py-24 bg-retro-black">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -67,7 +61,7 @@ export const Leaderboard: React.FC = () => {
                 LOADING LEADERBOARD...
               </div>
               <p className="text-retro-white font-body">
-                Fetching volume data from blockchain
+                Connecting to backend API
               </p>
             </div>
           </div>
@@ -100,12 +94,18 @@ export const Leaderboard: React.FC = () => {
                 Progress: {roundProgress.toFixed(0)}%
               </span>
               </div>
+              <div className="pixel-box bg-retro-black px-4 py-2 inline-block">
+              <span className={`font-display text-sm ${error ? 'text-red-500' : 'text-candle-green'}`}>
+                {error ? '⚠️ Offline' : '🟢 Live'}
+              </span>
+              </div>
               <button
-                  onClick={fetchLeaderboard}
-                  className="pixel-box bg-retro-black p-2 text-candle-green hover:bg-retro-gray-dark transition-colors"
+                  onClick={fetchLeaderboardData}
+                  disabled={loading}
+                  className="pixel-box bg-retro-black p-2 text-candle-green hover:bg-retro-gray-dark transition-colors disabled:opacity-50"
                   title="Refresh leaderboard"
               >
-                <RefreshCw className="w-5 h-5" />
+                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
               </button>
             </div>
 
@@ -116,7 +116,7 @@ export const Leaderboard: React.FC = () => {
             )}
 
             <div className="mt-2 text-retro-white font-body text-sm opacity-60">
-              Last updated: {lastUpdate.toLocaleTimeString()}
+              Last updated: {lastUpdate.toLocaleTimeString()} • {totalTraders} total traders
             </div>
           </div>
 
@@ -169,9 +169,14 @@ export const Leaderboard: React.FC = () => {
 
                           {/* Wallet */}
                           <div className="col-span-6">
-                            <div className="font-body text-lg text-retro-white">
+                            <a
+                                href={`https://solscan.io/account/${entry.wallet}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-body text-lg text-retro-white hover:text-candle-green transition-colors"
+                            >
                               {formatWallet(entry.wallet)}
-                            </div>
+                            </a>
                             {index === 0 && (
                                 <div className="text-xs font-display text-candle-green mt-1">
                                   👑 CURRENT KING
@@ -182,7 +187,7 @@ export const Leaderboard: React.FC = () => {
                           {/* Volume */}
                           <div className="col-span-2 text-right">
                             <div className="font-display text-candle-green text-lg">
-                              ${formatNumber(entry.volume)}
+                              {formatNumber(entry.volume)}
                             </div>
                           </div>
 
@@ -209,7 +214,7 @@ export const Leaderboard: React.FC = () => {
                 <span className="text-retro-white font-body text-sm">Total Volume</span>
               </div>
               <div className="text-3xl font-display text-candle-green text-shadow-retro">
-                ${formatNumber(totalVolume)}
+                {formatNumber(totalVolume)}
               </div>
               <div className="text-xs text-retro-white opacity-60 mt-1">
                 This round
@@ -235,12 +240,19 @@ export const Leaderboard: React.FC = () => {
                 <span className="text-retro-white font-body text-sm">Active Traders</span>
               </div>
               <div className="text-3xl font-display text-candle-green text-shadow-retro">
-                {activeTraders}
+                {totalTraders}
               </div>
               <div className="text-xs text-retro-white opacity-60 mt-1">
                 Competing this round
               </div>
             </div>
+          </div>
+
+          {/* Info Box */}
+          <div className="mt-8 pixel-box bg-retro-black p-4">
+            <p className="text-candle-green font-display text-xs text-center">
+              🔥 Volume tracked via Helius webhooks • Updates every 10 seconds • Top traders win rewards
+            </p>
           </div>
         </div>
       </section>
