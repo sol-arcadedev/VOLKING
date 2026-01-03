@@ -6,7 +6,7 @@ import {
   LAMPORTS_PER_SOL,
   sendAndConfirmTransaction,
 } from '@solana/web3.js';
-import { connection } from './solanaService';
+import { connection } from './solanaService.ts';
 
 const REWARD_WALLET = import.meta.env.VITE_REWARD_WALLET_ADDRESS || '';
 const CREATOR_FEE_WALLET = import.meta.env.VITE_CREATOR_FEE_WALLET || '';

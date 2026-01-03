@@ -18,8 +18,8 @@ export const Footer: React.FC = () => {
                     style={{ imageRendering: 'pixelated' }}
                 />
                 <span className="text-2xl font-display text-candle-green text-shadow-retro">
-                {TOKEN_CONFIG.name}
-              </span>
+                                {TOKEN_CONFIG.name}
+                            </span>
               </div>
               <p className="text-retro-white font-body text-lg mb-4 max-w-md">
                 {TOKEN_CONFIG.description}
@@ -60,6 +60,13 @@ export const Footer: React.FC = () => {
                 <FooterLink href="#">Audit</FooterLink>
               </ul>
             </div>
+          </div>
+
+          {/* Fee Distribution Reminder */}
+          <div className="pixel-box bg-retro-gray-dark p-4 mb-8">
+            <p className="text-candle-green font-display text-xs text-center">
+              📊 FEE SPLIT: 70% Treasury • 20% Reward Pool (15% winner + 5% next round) • 10% Buyback & Burn
+            </p>
           </div>
 
           {/* Bottom */}

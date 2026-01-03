@@ -1,6 +1,49 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useCountdown } from '../hooks/useCountdown';
+
+interface CountdownData {
+    minutes: number;
+    seconds: number;
+    progress: number;
+}
+
+const useCountdown = (): CountdownData => {
+    const [countdown, setCountdown] = useState<CountdownData>({
+        minutes: 0,
+        seconds: 0,
+        progress: 0,
+    });
+
+    useEffect(() => {
+        const calculateTimeRemaining = () => {
+            const now = Date.now();
+            const roundDuration = 15 * 60 * 1000; // 15 minutes in ms
+            const currentRoundStart = now - (now % roundDuration);
+            const nextRoundStart = currentRoundStart + roundDuration;
+            const timeRemaining = nextRoundStart - now;
+
+            const minutes = Math.floor(timeRemaining / 60000);
+            const seconds = Math.floor((timeRemaining % 60000) / 1000);
+            const progress = ((roundDuration - timeRemaining) / roundDuration) * 100;
+
+            return { minutes, seconds, progress };
+        };
+
+        const updateCountdown = () => {
+            setCountdown(calculateTimeRemaining());
+        };
+
+        // Initial calculation
+        updateCountdown();
+
+        // Update every second
+        const interval = setInterval(updateCountdown, 1000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    return countdown;
+};
 
 export const Timer: React.FC = () => {
     const { minutes, seconds, progress } = useCountdown();
