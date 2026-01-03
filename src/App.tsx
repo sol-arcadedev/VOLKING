@@ -3,7 +3,6 @@ import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { About } from './components/About';
 import { Leaderboard } from './components/Leaderboard';
-import { VolumeTracker } from './components/VolumeTracker';
 import { HallOfDegens } from './components/HallOfDegens';
 import { GlobalStats } from './components/GlobalStats';
 import { Rewards } from './components/Rewards';
@@ -19,7 +18,6 @@ const App: React.FC = () => {
                 <About />
                 <GlobalStats />
                 <Leaderboard />
-                <VolumeTracker />
                 <HallOfDegens />
                 <Rewards />
             </main>
