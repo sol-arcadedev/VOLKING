@@ -666,6 +666,9 @@ app.post('/api/webhook/transactions', async (req, res) => {
   try {
     console.log('📨 Webhook received!');
 
+    // LOG THE ENTIRE PAYLOAD FIRST
+    console.log('Raw webhook payload:', JSON.stringify(req.body, null, 2));
+
     const transactions = Array.isArray(req.body) ? req.body : [req.body];
     console.log(`Processing ${transactions.length} transactions`);
 
@@ -689,9 +692,132 @@ app.post('/api/webhook/transactions', async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ error: error.message });
   }
 });
+
+async function processTransaction(tx) {
+  let processed = 0;
+  let excluded = 0;
+
+  console.log('\n🔍 Transaction structure:', {
+    hasNativeTransfers: !!tx.nativeTransfers,
+    nativeTransfersCount: tx.nativeTransfers?.length || 0,
+    hasTokenTransfers: !!tx.tokenTransfers,
+    tokenTransfersCount: tx.tokenTransfers?.length || 0,
+    hasEvents: !!tx.events,
+    feePayer: tx.feePayer,
+    timestamp: tx.timestamp,
+    type: tx.type,
+    signature: tx.signature
+  });
+
+  const nativeTransfers = tx.nativeTransfers || [];
+  const tokenTransfers = tx.tokenTransfers || [];
+  const feePayer = tx.feePayer;
+  const timestamp = (tx.timestamp || Math.floor(Date.now() / 1000)) * 1000;
+
+  // Log all token transfers to verify mint addresses
+  console.log('Token transfers:', tokenTransfers.map(t => ({
+    mint: t.mint,
+    fromUserAccount: t.fromUserAccount,
+    toUserAccount: t.toUserAccount,
+    tokenAmount: t.tokenAmount
+  })));
+
+  // Check if transaction involves our token
+  const hasOurToken = tokenTransfers.some(t => t.mint === TOKEN_ADDRESS);
+
+  if (!hasOurToken) {
+    console.log(`⚠️ Transaction does not involve our token. Expected: ${TOKEN_ADDRESS}`);
+    console.log(`Found mints:`, tokenTransfers.map(t => t.mint));
+    return { processed: 0, excluded: 0 };
+  }
+
+  console.log(`✓ Transaction involves our token`);
+
+  let solValue = 0;
+  let traderWallet = feePayer;
+
+  // Process native transfers
+  for (const transfer of nativeTransfers) {
+    const amount = transfer.amount / Math.pow(10, SOL_DECIMALS);
+    const from = transfer.fromUserAccount;
+    const to = transfer.toUserAccount;
+
+    console.log(`  SOL transfer: ${amount.toFixed(4)} SOL from ${from?.substring(0, 8)}... to ${to?.substring(0, 8)}...`);
+
+    // Check if this is a creator fee
+    if (CREATOR_FEE_WALLET && to === CREATOR_FEE_WALLET) {
+      trackCreatorFee(amount);
+      console.log(`  💵 Creator fee detected: ${amount.toFixed(4)} SOL`);
+    }
+
+    // Track trading volume - look for user's SOL in swap
+    if (amount >= 0.001) {
+      // The user is either sending or receiving SOL
+      const isFromUser = from === feePayer;
+      const isToUser = to === feePayer;
+
+      if (isFromUser || isToUser) {
+        if (amount > solValue) {
+          solValue = amount;
+          traderWallet = feePayer;
+        }
+      }
+    }
+  }
+
+  // Fallback: check swap events
+  if (tx.events?.swap) {
+    console.log('  📊 Swap event found:', JSON.stringify(tx.events.swap, null, 2));
+
+    const swap = tx.events.swap;
+
+    if (swap.nativeInput?.amount) {
+      const swapAmount = swap.nativeInput.amount / Math.pow(10, SOL_DECIMALS);
+      console.log(`  Swap native input: ${swapAmount.toFixed(4)} SOL`);
+      if (swapAmount > solValue) {
+        solValue = swapAmount;
+        traderWallet = swap.nativeInput.account || feePayer;
+      }
+    }
+
+    if (swap.nativeOutput?.amount) {
+      const swapAmount = swap.nativeOutput.amount / Math.pow(10, SOL_DECIMALS);
+      console.log(`  Swap native output: ${swapAmount.toFixed(4)} SOL`);
+      if (swapAmount > solValue) {
+        solValue = swapAmount;
+        traderWallet = swap.nativeOutput.account || feePayer;
+      }
+    }
+  }
+
+  console.log(`  Final SOL value: ${solValue.toFixed(4)} SOL`);
+  console.log(`  Trader wallet: ${traderWallet?.substring(0, 8)}...`);
+
+  // Update volume for trader
+  if (solValue > 0 && traderWallet) {
+    const isUser = await isUserWallet(traderWallet);
+
+    if (isUser) {
+      updateVolume(traderWallet, solValue, timestamp);
+      processed = 1;
+      stats.processed++;
+      stats.totalSolVolume += solValue;
+      console.log(`  ✅ ${traderWallet.substring(0, 8)}... traded ${solValue.toFixed(4)} SOL`);
+    } else {
+      excluded = 1;
+      stats.excluded++;
+      console.log(`  ❌ Excluded: ${traderWallet.substring(0, 8)}... (not a user wallet)`);
+    }
+  } else {
+    console.log(`  ⚠️ No valid SOL value found in transaction`);
+  }
+
+  return { processed, excluded };
+}
 
 async function processTransaction(tx) {
   let processed = 0;
