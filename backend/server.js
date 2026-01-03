@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import * as db from './services/database.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -63,17 +64,15 @@ const CACHE_TTL = 15 * 60 * 1000;
 // ============================================
 let volumeData = new Map();
 let currentRoundStart = getCurrentRoundStart();
-let roundNumber = 1;
 let currentRoundCreatorFees = 0;
+
+// These will be loaded from database
+let roundNumber = 1;
 let rewardWalletBalance = 0;
-let startReward = INITIAL_START_REWARD;
+let startReward = 0.2;
 let totalRewardsPaid = 0;
 let totalSupplyBurned = 0;
 let totalRoundsCompleted = 0;
-
-const winnerHistory = [];
-const rewardTransfers = [];
-const burnHistory = [];
 
 let stats = {
   processed: 0,
@@ -195,6 +194,44 @@ function calculateHallOfDegens() {
 }
 
 // ============================================
+// INITIALIZE DATABASE AND LOAD STATE
+// ============================================
+
+async function initializeServer() {
+  try {
+    console.log('🚀 Initializing VOLKING server...');
+
+    // Initialize database schema
+    await db.initializeDatabase();
+
+    // Load global stats from database
+    const globalStats = await db.getGlobalStats();
+
+    if (globalStats) {
+      totalRoundsCompleted = parseInt(globalStats.total_rounds_completed || 0);
+      totalRewardsPaid = parseFloat(globalStats.total_rewards_paid || 0);
+      totalSupplyBurned = parseFloat(globalStats.total_supply_burned || 0);
+      roundNumber = parseInt(globalStats.current_round_number || 1);
+      rewardWalletBalance = parseFloat(globalStats.reward_wallet_balance || 0);
+      startReward = parseFloat(globalStats.start_reward || 0.2);
+
+      console.log('✅ State loaded from database:');
+      console.log(`   Rounds completed: ${totalRoundsCompleted}`);
+      console.log(`   Total rewards paid: ${totalRewardsPaid.toFixed(4)} SOL`);
+      console.log(`   Total supply burned: ${totalSupplyBurned}`);
+      console.log(`   Current round: ${roundNumber}`);
+      console.log(`   Reward wallet balance: ${rewardWalletBalance.toFixed(4)} SOL`);
+      console.log(`   Start reward: ${startReward.toFixed(4)} SOL`);
+    }
+
+    console.log('✅ Server initialization complete');
+  } catch (error) {
+    console.error('❌ Server initialization failed:', error);
+    process.exit(1);
+  }
+}
+
+// ============================================
 // ROUND END LOGIC
 // ============================================
 
@@ -207,8 +244,21 @@ async function handleRoundEnd() {
 
   if (!winner) {
     console.log('⚪ No trades this round, no winner');
+
+    // Still increment round
     totalRoundsCompleted++;
     roundNumber++;
+
+    // Save to database
+    await db.updateGlobalStats({
+      totalRoundsCompleted,
+      totalRewardsPaid,
+      totalSupplyBurned,
+      currentRoundNumber: roundNumber,
+      rewardWalletBalance,
+      startReward,
+    });
+
     resetForNewRound(false);
     return null;
   }
@@ -230,31 +280,67 @@ async function handleRoundEnd() {
   console.log(`\n🏆 Winner Distribution:`);
   console.log(`   Winner: ${winner.wallet.substring(0, 8)}...`);
   console.log(`   Volume: ${winner.volume.toFixed(4)} SOL`);
-  console.log(`   Reward (15% of reward wallet): ${winnerReward.toFixed(4)} SOL`);
-  console.log(`   Next Round Start Reward (5%): ${nextStartReward.toFixed(4)} SOL`);
+  console.log(`   Reward (15%): ${winnerReward.toFixed(4)} SOL`);
+  console.log(`   Next Start Reward (5%): ${nextStartReward.toFixed(4)} SOL`);
 
   const placeholderSignature = `round-${roundNumber}-${winner.wallet.substring(0, 8)}-${Date.now()}`;
 
-  recordWinner(
-      winner.wallet,
-      winner.volume,
-      winnerReward,
-      placeholderSignature,
-      currentRoundStart
-  );
+  // ============================================
+  // SAVE TO DATABASE
+  // ============================================
 
+  // Save winner
+  await db.saveWinner({
+    wallet: winner.wallet,
+    volume: winner.volume,
+    reward: winnerReward,
+    signature: placeholderSignature,
+    roundNumber,
+    roundStart: currentRoundStart,
+    timestamp: Date.now(),
+  });
+
+  // Save reward transfer
+  await db.saveRewardTransfer({
+    wallet: winner.wallet,
+    amount: winnerReward,
+    signature: placeholderSignature,
+    roundNumber,
+    roundStart: currentRoundStart,
+    timestamp: Date.now(),
+  });
+
+  // Update totals
+  totalRewardsPaid += winnerReward;
   rewardWalletBalance -= winnerReward;
   rewardWalletBalance -= nextStartReward;
   startReward = nextStartReward;
+  totalRoundsCompleted++;
 
+  // Save burn if applicable
   if (buybackAmount > 0) {
-    recordBurn(buybackAmount, 0, 'pending-burn');
+    await db.saveBurn({
+      amountSOL: buybackAmount,
+      tokensBurned: 0,
+      signature: 'pending-burn',
+      roundNumber,
+      timestamp: Date.now(),
+    });
   }
 
-  totalRoundsCompleted++;
+  // Save global stats
+  await db.updateGlobalStats({
+    totalRoundsCompleted,
+    totalRewardsPaid,
+    totalSupplyBurned,
+    currentRoundNumber: roundNumber + 1,
+    rewardWalletBalance,
+    startReward,
+  });
+
   roundNumber++;
 
-  console.log(`\n✅ Round ${roundNumber - 1} complete!`);
+  console.log(`\n✅ Round ${roundNumber - 1} complete and saved to database!`);
   console.log(`   Next round start reward: ${startReward.toFixed(4)} SOL`);
   console.log(`   Remaining reward wallet: ${rewardWalletBalance.toFixed(4)} SOL\n`);
 
@@ -367,9 +453,13 @@ setInterval(() => {
 // API ENDPOINTS
 // ============================================
 
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
+  const dbHealth = await db.checkDatabaseHealth();
+
   res.json({
     status: 'ok',
+    database: dbHealth.healthy ? 'connected' : 'disconnected',
+    databaseVersion: dbHealth.version?.split(' ')[0],
     roundStart: new Date(currentRoundStart).toISOString(),
     roundNumber,
     traders: volumeData.size,
@@ -439,30 +529,23 @@ app.get('/api/global-stats', (req, res) => {
   });
 });
 
-app.get('/api/hall-of-degens', (req, res) => {
-  try {
-    const degens = calculateHallOfDegens();
+app.get('/api/hall-of-degens', async (req, res) => {
+  const limit = parseInt(req.query.limit) || 50;
+  const winners = await db.getAllWinners();
 
-    res.json({
-      degens,
-      recentTransfers: rewardTransfers.slice(0, 50),
-      totalWinners: degens.length,
-      totalRewardsPaid,
-      currentRewardPool: calculateCurrentReward(),
-      lastUpdated: Date.now(),
-    });
-  } catch (error) {
-    console.error('Error calculating Hall of Degens:', error);
-    res.status(500).json({
-      error: 'Failed to calculate Hall of Degens',
-      degens: [],
-      recentTransfers: [],
-      totalWinners: 0,
-      totalRewardsPaid: 0,
-      currentRewardPool: 0,
-      lastUpdated: Date.now(),
-    });
-  }
+  res.json({
+    winners: winners.slice(0, limit).map(w => ({
+      wallet: w.wallet,
+      volume: parseFloat(w.volume),
+      reward: parseFloat(w.reward),
+      signature: w.signature,
+      roundNumber: parseInt(w.round_number),
+      roundStart: parseInt(w.round_start),
+      timestamp: parseInt(w.timestamp),
+    })),
+    total: winners.length,
+    totalRewardsPaid,
+  });
 });
 
 app.get('/api/winners', (req, res) => {
@@ -476,13 +559,19 @@ app.get('/api/winners', (req, res) => {
   });
 });
 
-app.get('/api/burns', (req, res) => {
+app.get('/api/burns', async (req, res) => {
   const limit = parseInt(req.query.limit) || 50;
-  const burns = burnHistory.slice(-limit).reverse();
+  const burns = await db.getBurnHistory(limit);
 
   res.json({
-    burns,
-    total: burnHistory.length,
+    burns: burns.map(b => ({
+      amountSOL: parseFloat(b.amount_sol),
+      tokensBurned: parseInt(b.tokens_burned || 0),
+      signature: b.signature,
+      roundNumber: parseInt(b.round_number),
+      timestamp: parseInt(b.timestamp),
+    })),
+    total: burns.length,
     totalSupplyBurned,
   });
 });
@@ -526,60 +615,45 @@ app.post('/api/admin/track-fee', (req, res) => {
   });
 });
 
-app.post('/api/admin/update-signature', (req, res) => {
+// UPDATE: /api/admin/update-signature
+app.post('/api/admin/update-signature', async (req, res) => {
   const { adminKey, wallet, roundStart, signature } = req.body;
 
   if (adminKey !== process.env.ADMIN_KEY) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const record = winnerHistory.find(
-      r => r.wallet === wallet && r.roundStart === roundStart
-  );
-
-  if (record) {
-    record.signature = signature;
-  }
-
-  const transfer = rewardTransfers.find(
-      t => t.wallet === wallet && t.roundStart === roundStart
-  );
-
-  if (transfer) {
-    transfer.signature = signature;
-  }
+  await db.updateWinnerSignature(wallet, roundStart, signature);
 
   res.json({
     success: true,
-    message: 'Signature updated',
+    message: 'Signature updated in database',
     wallet,
     signature,
   });
 });
 
-app.post('/api/admin/update-burn', (req, res) => {
+app.post('/api/admin/update-burn', async (req, res) => {
   const { adminKey, roundNumber: rn, tokensBurned, signature } = req.body;
 
   if (adminKey !== process.env.ADMIN_KEY) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const record = burnHistory.find(b => b.roundNumber === rn);
+  await db.updateBurnSignature(rn, tokensBurned, signature);
 
-  if (record) {
-    record.tokensBurned = tokensBurned;
-    record.signature = signature;
-    totalSupplyBurned = burnHistory.reduce((sum, b) => sum + (b.tokensBurned || 0), 0);
-  }
+  // Reload from database
+  const globalStats = await db.getGlobalStats();
+  totalSupplyBurned = parseFloat(globalStats.total_supply_burned || 0);
 
   res.json({
     success: true,
-    message: 'Burn record updated',
+    message: 'Burn record updated in database',
     totalSupplyBurned,
   });
 });
 
-app.post('/api/admin/set-reward-balance', (req, res) => {
+app.post('/api/admin/set-reward-balance', async (req, res) => {
   const { adminKey, balance } = req.body;
 
   if (adminKey !== process.env.ADMIN_KEY) {
@@ -587,6 +661,15 @@ app.post('/api/admin/set-reward-balance', (req, res) => {
   }
 
   rewardWalletBalance = parseFloat(balance);
+
+  await db.updateGlobalStats({
+    totalRoundsCompleted,
+    totalRewardsPaid,
+    totalSupplyBurned,
+    currentRoundNumber: roundNumber,
+    rewardWalletBalance,
+    startReward,
+  });
 
   res.json({
     success: true,
@@ -860,22 +943,17 @@ app.get('/', (req, res) => {
 // START SERVER
 // ============================================
 
-app.listen(PORT, () => {
-  console.log(`\n🚀 VOLKING API v4 running on port ${PORT}`);
-  console.log(`📊 Current round: ${roundNumber}`);
-  console.log(`⏰ Round started: ${new Date(currentRoundStart).toISOString()}`);
-  console.log(`💰 Start reward: ${startReward.toFixed(4)} SOL`);
-  console.log(`\n📈 Fee Distribution:`);
-  console.log(`   Treasury: ${TREASURY_PERCENTAGE * 100}%`);
-  console.log(`   Reward Wallet: ${REWARD_WALLET_PERCENTAGE * 100}%`);
-  console.log(`   Buyback & Burn: ${BUYBACK_BURN_PERCENTAGE * 100}%`);
-  console.log(`\n🏆 Reward Distribution:`);
-  console.log(`   Winner: ${WINNER_REWARD_PERCENTAGE * 100}% of reward wallet`);
-  console.log(`   Next Start Reward: ${START_REWARD_PERCENTAGE * 100}% of reward wallet`);
-  console.log(`\n✅ Configuration:`);
-  console.log(`   Token: ${TOKEN_ADDRESS ? TOKEN_ADDRESS.substring(0, 8) + '...' : 'NOT SET'}`);
-  console.log(`   Creator Fee Wallet: ${CREATOR_FEE_WALLET ? CREATOR_FEE_WALLET.substring(0, 8) + '...' : 'NOT SET'}`);
-  console.log(`   Treasury: ${TREASURY_WALLET ? TREASURY_WALLET.substring(0, 8) + '...' : 'NOT SET'}`);
-  console.log(`   Reward Wallet: ${REWARD_WALLET_PUBLIC ? REWARD_WALLET_PUBLIC.substring(0, 8) + '...' : 'NOT SET'}`);
-  console.log('');
+initializeServer().then(() => {
+  app.listen(PORT, () => {
+    console.log(`\n🚀 VOLKING API running on port ${PORT}`);
+    console.log(`📊 Current round: ${roundNumber}`);
+    console.log(`💰 Start reward: ${startReward.toFixed(4)} SOL`);
+    console.log(`📈 Total rounds completed: ${totalRoundsCompleted}`);
+    console.log(`💎 Total rewards paid: ${totalRewardsPaid.toFixed(4)} SOL`);
+    console.log(`🔥 Total supply burned: ${totalSupplyBurned}`);
+    console.log('');
+  });
+}).catch((error) => {
+  console.error('❌ Failed to start server:', error);
+  process.exit(1);
 });
