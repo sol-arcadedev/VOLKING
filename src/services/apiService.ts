@@ -95,3 +95,25 @@ export function getCurrentRoundStart(): number {
 export function getNextRoundStart(): number {
     return getCurrentRoundStart() + 15 * 60 * 1000;
 }
+
+/**
+ * Format wallet address for display
+ */
+export function formatWallet(wallet: string, chars: number = 4): string {
+    if (!wallet || wallet.length < chars * 2) return wallet || '---';
+    return `${wallet.slice(0, chars)}...${wallet.slice(-chars)}`;
+}
+
+/**
+ * Format SOL volume for display
+ */
+export function formatVolume(volume: number): string {
+    if (volume >= 1_000) {
+        return `${(volume / 1_000).toFixed(2)}K`;
+    }
+    if (volume >= 1) {
+        return `${volume.toFixed(2)}`;
+    }
+    // For small amounts, show more decimals
+    return volume.toFixed(4);
+}

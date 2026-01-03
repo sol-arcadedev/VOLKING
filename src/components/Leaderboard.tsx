@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, TrendingUp, RefreshCw } from 'lucide-react';
-import { formatWallet, formatNumber } from '../utils/helpers';
-import { fetchLeaderboard, getCurrentRoundStart, getNextRoundStart, type VolumeData } from '../services/apiService';
+import { fetchLeaderboard, getCurrentRoundStart, getNextRoundStart, formatWallet, formatVolume, type VolumeData } from '../services/apiService';
 
 export const Leaderboard: React.FC = () => {
   const [entries, setEntries] = useState<VolumeData[]>([]);
@@ -187,7 +186,7 @@ export const Leaderboard: React.FC = () => {
                           {/* Volume */}
                           <div className="col-span-2 text-right">
                             <div className="font-display text-candle-green text-lg">
-                              {formatNumber(entry.volume)}
+                              {formatVolume(entry.volume)} SOL
                             </div>
                           </div>
 
@@ -214,7 +213,7 @@ export const Leaderboard: React.FC = () => {
                 <span className="text-retro-white font-body text-sm">Total Volume</span>
               </div>
               <div className="text-3xl font-display text-candle-green text-shadow-retro">
-                {formatNumber(totalVolume)}
+                {formatVolume(totalVolume)} SOL
               </div>
               <div className="text-xs text-retro-white opacity-60 mt-1">
                 This round
