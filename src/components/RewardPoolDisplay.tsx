@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { DollarSign, Award, RefreshCw, Crown } from 'lucide-react';
+import { RefreshCw, Crown } from 'lucide-react';
 
 interface RewardPoolData {
     currentRoundCreatorFees: number;
@@ -170,91 +170,6 @@ export const RewardPoolDisplay: React.FC = () => {
                         <span className="text-retro-white opacity-60 font-body">
                             {lastUpdate.toLocaleTimeString()}
                         </span>
-                    </div>
-                </div>
-
-                {/* Corner decoration */}
-                <div className="absolute top-2 right-2 text-candle-green opacity-20 text-4xl font-display">
-                    👑
-                </div>
-            </motion.div>
-
-            {/* Fee Distribution Breakdown */}
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
-                className="pixel-box p-8 bg-retro-black relative overflow-hidden"
-            >
-                {/* Animated background */}
-                <motion.div
-                    className="absolute inset-0 bg-candle-green opacity-5"
-                    animate={{ opacity: [0.05, 0.08, 0.05] }}
-                    transition={{ duration: 3, repeat: Infinity }}
-                />
-
-                <div className="relative z-10">
-                    <div className="flex items-center space-x-3 mb-4">
-                        <DollarSign className="w-8 h-8 text-candle-green" />
-                        <h3 className="text-lg font-display text-candle-green uppercase text-shadow-retro">
-                            FEE DISTRIBUTION
-                        </h3>
-                    </div>
-
-                    {/* Distribution Breakdown */}
-                    <div className="space-y-4 mb-6">
-                        <div className="pixel-box bg-retro-gray-dark p-4">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-retro-white font-body text-sm">Treasury (70%)</span>
-                                <span className="text-candle-green font-display text-sm">
-                                    {formatSOL(poolData.currentRoundCreatorFees * 0.70)} SOL
-                                </span>
-                            </div>
-                            <div className="w-full bg-retro-black h-3 border border-candle-green-dark">
-                                <div className="h-full bg-candle-green" style={{ width: '70%' }} />
-                            </div>
-                        </div>
-
-                        <div className="pixel-box bg-retro-gray-dark p-4">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-retro-white font-body text-sm">Reward Wallet (20%)</span>
-                                <span className="text-candle-green font-display text-sm">
-                                    {formatSOL(poolData.currentRoundCreatorFees * 0.20)} SOL
-                                </span>
-                            </div>
-                            <div className="w-full bg-retro-black h-3 border border-candle-green-dark">
-                                <div className="h-full bg-candle-green" style={{ width: '20%' }} />
-                            </div>
-                            <div className="text-xs text-retro-white opacity-60 mt-2">
-                                → 15% to winner • 5% as next round start reward
-                            </div>
-                        </div>
-
-                        <div className="pixel-box bg-retro-gray-dark p-4">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="text-retro-white font-body text-sm">Buyback & Burn (10%)</span>
-                                <span className="text-candle-red font-display text-sm">
-                                    {formatSOL(poolData.currentRoundCreatorFees * 0.10)} SOL
-                                </span>
-                            </div>
-                            <div className="w-full bg-retro-black h-3 border border-candle-red-dark">
-                                <div className="h-full bg-candle-red" style={{ width: '10%' }} />
-                            </div>
-                            <div className="text-xs text-retro-white opacity-60 mt-2">
-                                🔥 Bought back & burned forever
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Total Rewards Paid */}
-                    <div className="pixel-box bg-candle-green bg-opacity-10 p-4">
-                        <div className="flex items-center space-x-2 mb-1">
-                            <Award className="w-5 h-5 text-candle-green" />
-                            <span className="text-retro-white font-body text-sm">Total Rewards Paid Out:</span>
-                        </div>
-                        <div className="text-2xl font-display text-candle-green text-shadow-retro tabular-nums">
-                            {formatSOL(poolData.totalRewardsPaid)} SOL
-                        </div>
                     </div>
                 </div>
 

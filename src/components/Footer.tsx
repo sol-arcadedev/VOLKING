@@ -57,55 +57,6 @@ export const Footer: React.FC = () => {
                 </FooterLink>
               </ul>
             </div>
-
-            {/* Resources */}
-            <div>
-              <h4 className="text-candle-green font-display text-lg mb-6 uppercase text-shadow-retro">
-                Resources
-              </h4>
-              <ul className="space-y-3">
-                <FooterLink href="#">Whitepaper</FooterLink>
-                <FooterLink href="#">Documentation</FooterLink>
-                <FooterLink href="#">Contract</FooterLink>
-                <FooterLink href="#">Audit</FooterLink>
-              </ul>
-            </div>
-          </div>
-
-          {/* Fee Distribution Reminder */}
-          <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="pixel-box bg-pepe-green p-6 mb-10"
-          >
-            <p className="text-black font-display text-base text-center">
-              📊 FEE SPLIT: 70% Treasury • 20% Reward Pool (15% winner + 5% next round) • 10% Buyback & Burn
-            </p>
-          </motion.div>
-
-          {/* Bottom */}
-          <div className="border-t-2 border-retro-gray pt-8">
-            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-              <p className="text-retro-white font-body text-base">
-                © {new Date().getFullYear()} {TOKEN_CONFIG.name}. All rights reserved.
-              </p>
-              <div className="flex space-x-8">
-                <a href="#" className="text-retro-white hover:text-candle-green font-body text-base transition-colors">
-                  Terms of Service
-                </a>
-                <a href="#" className="text-retro-white hover:text-candle-green font-body text-base transition-colors">
-                  Privacy Policy
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Powered by message */}
-          <div className="mt-8 text-center">
-            <p className="text-retro-white opacity-50 font-body text-sm">
-              Made with 💚 by the VOLKING community
-            </p>
           </div>
         </div>
       </footer>

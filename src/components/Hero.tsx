@@ -12,6 +12,11 @@ export const Hero: React.FC = () => {
         <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center">
 
+            {/* Contract Address */}
+            <p className="text-lg font-body text-candle-green mb-8">
+              CA: To be added
+            </p>
+
             {/* Logo */}
             <motion.div
                 className="mb-8"

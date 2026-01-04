@@ -641,16 +641,23 @@ app.post('/api/admin/set-reward-balance', async (req, res) => {
 });
 
 // ============================================
-// WEBHOOK ENDPOINT - WITH DETAILED LOGGING
+// WEBHOOK ENDPOINT - WITH SAMPLED LOGGING
 // ============================================
 
 app.post('/api/webhook/transactions', async (req, res) => {
   try {
-    console.log('📨 Webhook received!');
-    console.log('Raw webhook payload:', JSON.stringify(req.body, null, 2));
+    const shouldLog = Math.random() < 0.01; // 1% sample rate
+
+    if (shouldLog) {
+      console.log('📨 Webhook received! (sampled log)');
+      console.log('Raw webhook payload:', JSON.stringify(req.body, null, 2));
+    }
 
     const transactions = Array.isArray(req.body) ? req.body : [req.body];
-    console.log(`Processing ${transactions.length} transactions`);
+
+    if (shouldLog) {
+      console.log(`Processing ${transactions.length} transactions`);
+    }
 
     let totalProcessed = 0;
     let totalExcluded = 0;
@@ -661,7 +668,9 @@ app.post('/api/webhook/transactions', async (req, res) => {
       totalExcluded += result.excluded;
     }
 
-    console.log(`✅ Traders: ${volumeData.size}, SOL volume: ${stats.totalSolVolume.toFixed(4)}, Reward pool: ${calculateCurrentReward().toFixed(4)}`);
+    if (shouldLog) {
+      console.log(`✅ Traders: ${volumeData.size}, SOL volume: ${stats.totalSolVolume.toFixed(4)}, Reward pool: ${calculateCurrentReward().toFixed(4)}`);
+    }
 
     res.status(200).json({
       success: true,
@@ -671,6 +680,7 @@ app.post('/api/webhook/transactions', async (req, res) => {
       currentRewardPool: calculateCurrentReward(),
     });
   } catch (error) {
+    // ⚠️ Always log errors - don't sample these!
     console.error('❌ Error:', error);
     console.error('Error stack:', error.stack);
     res.status(500).json({ error: error.message });

@@ -4,7 +4,7 @@ export const TOKEN_CONFIG = {
   name: 'VOLKING',
   symbol: 'VOLK',
   description: 'The ultimate volume-based reward token on Pump.fun',
-  roundDuration: 15, // minutes
+  roundDuration: 5, // minutes
 
   // Fee Distribution (per requirements)
   treasuryPercentage: 70,      // 70% to treasury wallet
