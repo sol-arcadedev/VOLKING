@@ -324,6 +324,19 @@ export async function saveRewardTransfer(transferData) {
     }
 }
 
+export async function getRewardTransfers(limit = 50) {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM reward_transfers ORDER BY timestamp DESC LIMIT $1',
+            [limit]
+        );
+        return result.rows;
+    } catch (error) {
+        console.error('❌ Error fetching reward transfers:', error);
+        return [];
+    }
+}
+
 // ============================================
 // ADMIN UTILITY OPERATIONS
 // ============================================

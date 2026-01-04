@@ -484,10 +484,22 @@ app.get('/api/hall-of-degens', async (req, res) => {
   const limit = parseInt(req.query.limit) || 50;
   const degens = await db.getHallOfDegens();
 
+  // ✅ ADD THIS: Fetch recent reward transfers
+  const recentTransfers = await db.getRewardTransfers(50);
+
   res.json({
     degens: degens.slice(0, limit),
     total: degens.length,
     totalRewardsPaid,
+    // ✅ ADD THIS: Include recent transfers in response
+    recentTransfers: recentTransfers.map(t => ({
+      wallet: t.wallet,
+      amount: parseFloat(t.amount),
+      signature: t.signature,
+      roundNumber: parseInt(t.round_number),
+      roundStart: parseInt(t.round_start),
+      timestamp: parseInt(t.timestamp),
+    })),
   });
 });
 
