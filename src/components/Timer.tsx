@@ -27,7 +27,7 @@ const useCountdown = (): CountdownData => {
                 const data = await response.json();
 
                 const now = Date.now();
-                const roundDuration = 15 * 60 * 1000; // 15 minutes in ms
+                const roundDuration = 3 * 60 * 1000; // 15 minutes in ms
                 const currentRoundStart = now - (now % roundDuration);
                 const nextRoundStart = currentRoundStart + roundDuration;
                 const timeRemaining = nextRoundStart - now;
