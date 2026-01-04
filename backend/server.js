@@ -48,7 +48,7 @@ app.use(cors({
     // Allow all Cloudflare Pages preview deployments
     /\.pages\.dev$/,
 
-    // Allow all subdomains of volking.fun (future-proofing)
+    // Allow all subdomains of volking.fun
     /\.volking\.fun$/
   ],
   credentials: true,
@@ -56,7 +56,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Handle preflight requests
 app.options('*', cors());
 app.use(express.json());
 
@@ -67,10 +66,10 @@ app.use(express.json());
 const HELIUS_API_KEY = process.env.HELIUS_API_KEY || '';
 const TOKEN_ADDRESS = process.env.TOKEN_ADDRESS || '';
 const CREATOR_FEE_WALLET = process.env.CREATOR_FEE_WALLET || '';
+const CREATOR_FEE_WALLET_PRIVATE = process.env.CREATOR_FEE_WALLET_PRIVATE || '';
 const TREASURY_WALLET = process.env.TREASURY_WALLET || '';
 const REWARD_WALLET_PUBLIC = process.env.REWARD_WALLET_PUBLIC || '';
 const REWARD_WALLET_PRIVATE = process.env.REWARD_WALLET_PRIVATE || '';
-const BUYBACK_WALLET = process.env.CREATOR_FEE_WALLET || '';
 
 // Jupiter API for swaps
 const JUPITER_API = 'https://quote-api.jup.ag/v6';
@@ -279,7 +278,7 @@ async function distributeFees(totalFees) {
 
   // Get keypair for creator fee wallet (needs to be funded with claimed fees)
   // In production, this would be the wallet that received the claimed fees
-  const creatorKeypair = getKeypairFromPrivateKey(process.env.CREATOR_FEE_WALLET_PRIVATE);
+  const creatorKeypair = getKeypairFromPrivateKey(CREATOR_FEE_WALLET_PRIVATE);
 
   if (!creatorKeypair) {
     console.log('⚠️ Creator fee wallet keypair not configured - simulating distribution');
@@ -310,14 +309,10 @@ async function distributeFees(totalFees) {
       rewardWalletBalance += distribution.rewardWallet;
     }
 
-    // Transfer to Buyback Wallet (for subsequent burn)
-    if (BUYBACK_WALLET && distribution.buybackBurn > 0.001) {
-      console.log(`\n   Transferring ${distribution.buybackBurn.toFixed(4)} SOL to Buyback Wallet...`);
-      distribution.signatures.buyback = await transferSOL(
-          creatorKeypair,
-          BUYBACK_WALLET,
-          distribution.buybackBurn
-      );
+    // Buyback amount stays in creator fee wallet for the buyback & burn operation
+    // No transfer needed - executeBuybackAndBurn will use the creator fee wallet directly
+    if (distribution.buybackBurn > 0.001) {
+      console.log(`\n   💰 ${distribution.buybackBurn.toFixed(4)} SOL reserved for Buyback & Burn (stays in creator fee wallet)`);
     }
 
     console.log('\n✅ Fee distribution complete!');
@@ -334,6 +329,7 @@ async function distributeFees(totalFees) {
 /**
  * Execute buyback and burn
  * Uses Jupiter to swap SOL for tokens, then burns them
+ * Uses the CREATOR_FEE_WALLET which already holds the 10% buyback allocation
  */
 async function executeBuybackAndBurn(amountSOL) {
   if (!ENABLE_BUYBACK_BURN) {
@@ -348,10 +344,11 @@ async function executeBuybackAndBurn(amountSOL) {
 
   console.log(`\n🔥 Executing Buyback & Burn with ${amountSOL.toFixed(4)} SOL...`);
 
-  const buybackKeypair = getKeypairFromPrivateKey(process.env.CREATOR_FEE_WALLET_PRIVATE);
+  // Use the creator fee wallet for buyback (same wallet that claims fees)
+  const creatorFeeKeypair = getKeypairFromPrivateKey(CREATOR_FEE_WALLET_PRIVATE);
 
-  if (!buybackKeypair) {
-    console.log('⚠️ Buyback wallet keypair not configured - simulating burn');
+  if (!creatorFeeKeypair) {
+    console.log('⚠️ Creator fee wallet keypair not configured - simulating burn');
     // Estimate tokens that would be bought
     const estimatedTokens = amountSOL * 1000000; // Placeholder rate
     return { success: true, tokensBurned: estimatedTokens, simulated: true };
@@ -379,7 +376,7 @@ async function executeBuybackAndBurn(amountSOL) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         quoteResponse: quote,
-        userPublicKey: buybackKeypair.publicKey.toString(),
+        userPublicKey: creatorFeeKeypair.publicKey.toString(),
         wrapAndUnwrapSol: true,
       }),
     });
@@ -396,7 +393,7 @@ async function executeBuybackAndBurn(amountSOL) {
     const swapSignature = await sendAndConfirmTransaction(
         connection,
         swapTx,
-        [buybackKeypair],
+        [creatorFeeKeypair],
         { commitment: 'confirmed' }
     );
     console.log(`   ✅ Swap complete: ${swapSignature}`);
