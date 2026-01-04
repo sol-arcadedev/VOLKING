@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { DollarSign, Flame, RefreshCw, TrendingUp } from 'lucide-react';
+import { DollarSign, Flame, RefreshCw, TrendingUp, BarChart3 } from 'lucide-react';
 
 interface GlobalStatsData {
     totalRewardsPaid: number;
@@ -69,185 +69,212 @@ export const GlobalStats: React.FC = () => {
 
     useEffect(() => {
         fetchGlobalStats();
-        // Update every 30 seconds
         const interval = setInterval(fetchGlobalStats, 30000);
         return () => clearInterval(interval);
     }, []);
 
     return (
-        <section id="global-stats" className="py-16 bg-retro-black">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="global-stats" className="py-32 bg-gradient-to-b from-retro-black via-retro-gray-dark to-retro-black relative overflow-hidden">
+            <div className="absolute inset-0 retro-grid opacity-20" />
+
+            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Title */}
-                <div className="text-center mb-12">
-                    <h2 className="text-4xl md:text-5xl font-display text-candle-green text-shadow-retro mb-4 uppercase">
-                        VOLKING STATS
-                    </h2>
-                    <p className="text-xl text-retro-white font-body">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="text-center mb-16"
+                >
+                    <div className="inline-block pixel-box-pepe px-8 py-4 mb-6">
+                        <h2 className="text-5xl md:text-6xl font-display text-black uppercase flex items-center gap-4">
+                            <BarChart3 className="w-12 h-12" />
+                            VOLKING STATS
+                        </h2>
+                    </div>
+                    <p className="text-2xl text-retro-white font-body">
                         Real-time protocol statistics
                     </p>
-                    <div className="flex items-center justify-center gap-4 mt-4">
-                        <div className="pixel-box bg-retro-black px-4 py-2 inline-block">
-                            <span className={`font-display text-sm ${error ? 'text-red-500' : 'text-candle-green'}`}>
-                                {error ? '⚠️ Offline' : '🟢 Live'}
-                            </span>
+                    <div className="flex items-center justify-center gap-4 mt-6">
+                        <div className="pixel-box bg-retro-black px-6 py-3">
+                            <div className="flex items-center space-x-2">
+                                <div className={`w-3 h-3 ${error ? 'bg-red-500' : 'bg-candle-green'} animate-pulse`} />
+                                <span className={`font-display text-sm ${error ? 'text-red-500' : 'text-candle-green'}`}>
+                                    {error ? '⚠️ Offline' : '🟢 Live'}
+                                </span>
+                            </div>
                         </div>
-                        <button
+                        <motion.button
                             onClick={fetchGlobalStats}
                             disabled={loading}
-                            className="pixel-box bg-retro-black p-2 text-candle-green hover:bg-retro-gray-dark transition-colors disabled:opacity-50"
-                            title="Refresh stats"
+                            className="pixel-box bg-retro-black px-4 py-3 text-candle-green hover:bg-retro-gray-dark transition-colors disabled:opacity-50"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                         >
                             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                        </button>
+                        </motion.button>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Main Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                     {/* Total Rewards Paid Out */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="pixel-box p-8 bg-retro-black relative overflow-hidden"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.4 }}
+                        className="pixel-box p-10 bg-retro-black relative overflow-hidden group card-hover"
                     >
                         <motion.div
-                            className="absolute inset-0 bg-candle-green opacity-5"
-                            animate={{ opacity: [0.05, 0.1, 0.05] }}
-                            transition={{ duration: 2, repeat: Infinity }}
+                            className="absolute inset-0 bg-candle-green"
+                            initial={{ opacity: 0.05 }}
+                            animate={{ opacity: [0.05, 0.12, 0.05] }}
+                            transition={{ duration: 3, repeat: Infinity }}
                         />
 
                         <div className="relative z-10">
-                            <div className="flex items-center space-x-3 mb-6">
-                                <div className="pixel-box bg-candle-green p-3">
-                                    <DollarSign className="w-8 h-8 text-black" />
+                            <div className="flex items-center space-x-4 mb-8">
+                                <div className="pixel-box bg-candle-green p-4">
+                                    <DollarSign className="w-10 h-10 text-black" strokeWidth={3} />
                                 </div>
-                                <h3 className="text-2xl font-display text-candle-green uppercase text-shadow-retro">
+                                <h3 className="text-3xl font-display text-candle-green uppercase text-shadow-retro">
                                     TOTAL REWARDS PAID
                                 </h3>
                             </div>
 
                             <motion.div
                                 key={stats.totalRewardsPaid}
-                                initial={{ scale: 1.02 }}
+                                initial={{ scale: 1.05 }}
                                 animate={{ scale: 1 }}
-                                transition={{ duration: 0.2 }}
+                                transition={{ duration: 0.3 }}
                             >
-                                <div className="text-5xl md:text-6xl font-display text-candle-green text-shadow-retro mb-2 tabular-nums">
+                                <div className="text-6xl md:text-7xl font-display text-candle-green text-shadow-retro mb-3 tabular-nums">
                                     {formatSOL(stats.totalRewardsPaid)} SOL
                                 </div>
-                                <div className="text-retro-white font-body text-lg opacity-80">
+                                <div className="text-retro-white font-body text-xl opacity-90">
                                     Distributed to Volume Kings
                                 </div>
                             </motion.div>
 
-                            <div className="mt-6 flex items-center space-x-2 text-sm text-retro-white opacity-60">
-                                <TrendingUp className="w-4 h-4" />
+                            <div className="mt-8 flex items-center space-x-3 text-base text-retro-white opacity-70">
+                                <TrendingUp className="w-5 h-5" />
                                 <span className="font-body">Growing every 15 minutes</span>
                             </div>
                         </div>
 
-                        <div className="absolute top-4 right-4 text-6xl opacity-10">
+                        <div className="absolute bottom-4 right-4 text-8xl opacity-10">
                             💰
                         </div>
                     </motion.div>
 
                     {/* Supply Burned */}
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: 0.1 }}
-                        className="pixel-box p-8 bg-retro-black relative overflow-hidden"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.4, delay: 0.1 }}
+                        className="pixel-box p-10 bg-retro-black relative overflow-hidden group card-hover"
                     >
                         <motion.div
-                            className="absolute inset-0 bg-candle-red opacity-5"
-                            animate={{ opacity: [0.05, 0.1, 0.05] }}
-                            transition={{ duration: 2, repeat: Infinity }}
+                            className="absolute inset-0 bg-candle-red"
+                            initial={{ opacity: 0.05 }}
+                            animate={{ opacity: [0.05, 0.12, 0.05] }}
+                            transition={{ duration: 3, repeat: Infinity }}
                         />
 
                         <div className="relative z-10">
-                            <div className="flex items-center space-x-3 mb-6">
-                                <div className="pixel-box bg-candle-red p-3">
-                                    <Flame className="w-8 h-8 text-white" />
+                            <div className="flex items-center space-x-4 mb-8">
+                                <div className="pixel-box bg-candle-red p-4">
+                                    <Flame className="w-10 h-10 text-white" strokeWidth={2.5} />
                                 </div>
-                                <h3 className="text-2xl font-display text-candle-red uppercase text-shadow-retro">
+                                <h3 className="text-3xl font-display text-candle-red uppercase text-shadow-retro">
                                     SUPPLY BURNED
                                 </h3>
                             </div>
 
                             <motion.div
                                 key={stats.totalSupplyBurned}
-                                initial={{ scale: 1.02 }}
+                                initial={{ scale: 1.05 }}
                                 animate={{ scale: 1 }}
-                                transition={{ duration: 0.2 }}
+                                transition={{ duration: 0.3 }}
                             >
-                                <div className="text-5xl md:text-6xl font-display text-candle-red text-shadow-retro mb-2 tabular-nums">
+                                <div className="text-6xl md:text-7xl font-display text-candle-red text-shadow-retro mb-3 tabular-nums">
                                     {formatTokens(stats.totalSupplyBurned)}
                                 </div>
-                                <div className="text-retro-white font-body text-lg opacity-80">
+                                <div className="text-retro-white font-body text-xl opacity-90">
                                     $VOLK tokens burned forever
                                 </div>
                             </motion.div>
 
-                            <div className="mt-6 flex items-center space-x-2 text-sm text-retro-white opacity-60">
-                                <Flame className="w-4 h-4" />
+                            <div className="mt-8 flex items-center space-x-3 text-base text-retro-white opacity-70">
+                                <Flame className="w-5 h-5" />
                                 <span className="font-body">10% of fees = buyback & burn</span>
                             </div>
                         </div>
 
-                        <div className="absolute top-4 right-4 text-6xl opacity-10">
+                        <div className="absolute bottom-4 right-4 text-8xl opacity-10">
                             🔥
                         </div>
                     </motion.div>
                 </div>
 
                 {/* Secondary Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="pixel-box p-6 bg-retro-black text-center">
-                        <div className="text-3xl font-display text-candle-green text-shadow-retro mb-2">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10"
+                >
+                    <div className="pixel-box p-8 bg-retro-black text-center group hover:bg-retro-gray-dark transition-all card-hover">
+                        <div className="text-5xl font-display text-candle-green text-shadow-retro mb-3">
                             {stats.totalRoundsCompleted}
                         </div>
-                        <div className="text-retro-white font-body text-sm opacity-80">
+                        <div className="text-retro-white font-body opacity-90">
                             Rounds Completed
                         </div>
                     </div>
 
-                    <div className="pixel-box p-6 bg-retro-black text-center">
-                        <div className="text-3xl font-display text-candle-green text-shadow-retro mb-2">
+                    <div className="pixel-box p-8 bg-retro-black text-center group hover:bg-retro-gray-dark transition-all card-hover">
+                        <div className="text-5xl font-display text-candle-green text-shadow-retro mb-3">
                             {stats.totalUniqueWinners}
                         </div>
-                        <div className="text-retro-white font-body text-sm opacity-80">
+                        <div className="text-retro-white font-body opacity-90">
                             Unique Winners
                         </div>
                     </div>
 
-                    <div className="pixel-box p-6 bg-retro-black text-center">
-                        <div className="text-3xl font-display text-candle-green text-shadow-retro mb-2">
+                    <div className="pixel-box p-8 bg-retro-black text-center group hover:bg-retro-gray-dark transition-all card-hover">
+                        <div className="text-5xl font-display text-candle-green text-shadow-retro mb-3">
                             15 MIN
                         </div>
-                        <div className="text-retro-white font-body text-sm opacity-80">
+                        <div className="text-retro-white font-body opacity-90">
                             Round Duration
                         </div>
                     </div>
 
-                    <div className="pixel-box p-6 bg-retro-black text-center">
-                        <div className="text-3xl font-display text-candle-green text-shadow-retro mb-2">
+                    <div className="pixel-box p-8 bg-retro-black text-center group hover:bg-retro-gray-dark transition-all card-hover">
+                        <div className="text-5xl font-display text-candle-green text-shadow-retro mb-3">
                             15%
                         </div>
-                        <div className="text-retro-white font-body text-sm opacity-80">
+                        <div className="text-retro-white font-body opacity-90">
                             Winner Reward
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Info Box */}
-                <div className="mt-8 pixel-box bg-retro-black p-4">
-                    <p className="text-candle-green font-display text-xs text-center">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="pixel-box bg-pepe-green p-6"
+                >
+                    <p className="text-black font-display text-base text-center">
                         📊 70% Treasury • 20% Reward Pool • 10% Buyback & Burn
                     </p>
-                </div>
+                </motion.div>
 
-                <div className="mt-2 text-center text-retro-white font-body text-sm opacity-60">
+                <div className="mt-4 text-center text-retro-white font-body text-sm opacity-60">
                     Last updated: {lastUpdate.toLocaleTimeString()}
                 </div>
             </div>

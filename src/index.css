@@ -22,116 +22,143 @@
 
 @layer utilities {
   .text-shadow-retro {
-    text-shadow: 2px 2px 0px #000000;
+    text-shadow: 3px 3px 0px #000000;
+  }
+
+  .text-shadow-glow {
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
   }
 }
 
 /* Classic Pixel Scrollbar */
 ::-webkit-scrollbar {
   width: 16px;
-  background: #000000;
+  background: #1a1a1a;
 }
 
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background: #1a1a1a;
   border: 2px solid #4CAF50;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #4CAF50;
-  border: 2px solid #000000;
+  border: 2px solid #1a1a1a;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #66BB6A;
 }
 
-/* Old-School Buttons */
+/* Retro Buttons */
 .btn-retro-green {
-  padding: 12px 24px;
+  padding: 14px 28px;
   background: #4CAF50;
   border: 4px solid #000000;
   color: #000000;
   font-weight: bold;
   text-transform: uppercase;
   font-family: 'Press Start 2P', cursive;
-  box-shadow: 4px 4px 0px 0px #000000;
+  box-shadow: 6px 6px 0px 0px #000000;
   transition: all 0.1s;
   cursor: pointer;
+  font-size: 14px;
 }
 
 .btn-retro-green:hover {
   transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0px 0px #000000;
+  box-shadow: 4px 4px 0px 0px #000000;
+  background: #66BB6A;
 }
 
 .btn-retro-green:active {
-  transform: translate(4px, 4px);
+  transform: translate(6px, 6px);
   box-shadow: 0px 0px 0px 0px #000000;
 }
 
 .btn-retro-red {
-  padding: 12px 24px;
+  padding: 14px 28px;
   background: #E53935;
   border: 4px solid #000000;
   color: #FFFFFF;
   font-weight: bold;
   text-transform: uppercase;
   font-family: 'Press Start 2P', cursive;
-  box-shadow: 4px 4px 0px 0px #000000;
+  box-shadow: 6px 6px 0px 0px #000000;
   transition: all 0.1s;
   cursor: pointer;
+  font-size: 14px;
 }
 
 .btn-retro-red:hover {
   transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0px 0px #000000;
+  box-shadow: 4px 4px 0px 0px #000000;
+  background: #EF5350;
+}
+
+.btn-retro-red:active {
+  transform: translate(6px, 6px);
+  box-shadow: 0px 0px 0px 0px #000000;
 }
 
 /* Pixel Box */
 .pixel-box {
-  background: #000000;
+  background: #1a1a1a;
   border: 4px solid #4CAF50;
-  box-shadow: 4px 4px 0px 0px #388E3C;
+  box-shadow: 6px 6px 0px 0px #388E3C;
+  transition: all 0.2s;
+}
+
+.pixel-box:hover {
+  box-shadow: 8px 8px 0px 0px #388E3C;
 }
 
 .pixel-box-red {
-  background: #000000;
+  background: #1a1a1a;
   border: 4px solid #E53935;
-  box-shadow: 4px 4px 0px 0px #C62828;
+  box-shadow: 6px 6px 0px 0px #C62828;
+}
+
+/* Pepe-themed box */
+.pixel-box-pepe {
+  background: linear-gradient(135deg, #556B2F 0%, #6B8E23 100%);
+  border: 4px solid #000000;
+  box-shadow: 6px 6px 0px 0px #556B2F;
 }
 
 /* Candle Styles */
 .candle {
-  border: 2px solid #000000;
+  border: 3px solid #000000;
   position: relative;
+  box-shadow: 2px 2px 0px 0px #000000;
 }
 
 .candle-green {
-  background: #4CAF50;
+  background: linear-gradient(180deg, #66BB6A 0%, #4CAF50 100%);
 }
 
 .candle-red {
-  background: #E53935;
+  background: linear-gradient(180deg, #EF5350 0%, #E53935 100%);
 }
 
 .candle-wick {
   background: #FFFFFF;
-  width: 2px;
+  width: 3px;
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+  box-shadow: 1px 1px 0px 0px rgba(0,0,0,0.3);
 }
 
 /* Grid Background */
 .retro-grid {
   background-image:
-          linear-gradient(#1a1a1a 1px, transparent 1px),
-          linear-gradient(90deg, #1a1a1a 1px, transparent 1px);
-  background-size: 20px 20px;
+          linear-gradient(rgba(76, 175, 80, 0.03) 2px, transparent 2px),
+          linear-gradient(90deg, rgba(76, 175, 80, 0.03) 2px, transparent 2px);
+  background-size: 40px 40px;
 }
 
-/* Scanlines */
+/* Scanlines Effect */
 .scanlines::before {
   content: '';
   position: absolute;
@@ -141,60 +168,67 @@
   height: 100%;
   background: repeating-linear-gradient(
           0deg,
-          rgba(0, 0, 0, 0.1),
-          rgba(0, 0, 0, 0.1) 1px,
+          rgba(0, 0, 0, 0.15),
+          rgba(0, 0, 0, 0.15) 1px,
           transparent 1px,
-          transparent 2px
+          transparent 3px
   );
   pointer-events: none;
   z-index: 100;
 }
 
 /* Pixel Border Animation */
-@keyframes border-blink {
-  0%, 50% { border-color: #4CAF50; }
-  51%, 100% { border-color: #E53935; }
+@keyframes border-pulse {
+  0%, 100% {
+    border-color: #4CAF50;
+    box-shadow: 6px 6px 0px 0px #388E3C;
+  }
+  50% {
+    border-color: #66BB6A;
+    box-shadow: 8px 8px 0px 0px #388E3C;
+  }
 }
 
-.border-blink {
-  animation: border-blink 1s infinite;
+.border-pulse {
+  animation: border-pulse 2s ease-in-out infinite;
 }
 
-/* Simple Animations Only */
-@keyframes float-simple {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+/* Floating Animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  25% { transform: translateY(-10px) rotate(-1deg); }
+  50% { transform: translateY(-5px) rotate(0deg); }
+  75% { transform: translateY(-15px) rotate(1deg); }
 }
 
-.float-simple {
-  animation: float-simple 3s ease-in-out infinite;
+.float {
+  animation: float 6s ease-in-out infinite;
 }
 
-@keyframes rotate-simple {
-  0% { transform: rotate(0deg); }
+/* Wiggle Animation */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
   25% { transform: rotate(-2deg); }
-  75% { transform: rotate(2deg); }
-  100% { transform: rotate(0deg); }
+  50% { transform: rotate(2deg); }
+  75% { transform: rotate(-1deg); }
 }
 
-.rotate-simple {
-  animation: rotate-simple 4s ease-in-out infinite;
+.wiggle {
+  animation: wiggle 3s ease-in-out infinite;
 }
 
-/* Text Styles */
-.text-retro-green {
-  color: #4CAF50;
-  text-shadow: 2px 2px 0px #000000;
+/* Glow Animation */
+@keyframes glow {
+  0%, 100% {
+    text-shadow: 0 0 10px #4CAF50, 0 0 20px #4CAF50, 3px 3px 0px #000000;
+  }
+  50% {
+    text-shadow: 0 0 20px #4CAF50, 0 0 40px #4CAF50, 3px 3px 0px #000000;
+  }
 }
 
-.text-retro-red {
-  color: #E53935;
-  text-shadow: 2px 2px 0px #000000;
-}
-
-.text-retro-white {
-  color: #FFFFFF;
-  text-shadow: 2px 2px 0px #000000;
+.text-glow {
+  animation: glow 2s ease-in-out infinite;
 }
 
 /* Blink Effect */
@@ -204,5 +238,43 @@
 }
 
 .blink {
-  animation: blink 1s steps(1) infinite;
+  animation: blink 1s steps(2, start) infinite;
+}
+
+/* Slide in from bottom */
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.slide-up {
+  animation: slideUp 0.6s ease-out;
+}
+
+/* Card hover effect */
+.card-hover {
+  transition: all 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translate(-2px, -2px);
+}
+
+/* Section divider */
+.section-divider {
+  height: 4px;
+  background: repeating-linear-gradient(
+          90deg,
+          #4CAF50 0px,
+          #4CAF50 20px,
+          transparent 20px,
+          transparent 40px
+  );
+  margin: 60px 0;
 }

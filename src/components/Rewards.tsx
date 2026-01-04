@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Percent, Clock, CheckCircle, RefreshCw } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { DollarSign, Percent, Clock, CheckCircle, RefreshCw, Zap, ArrowRight } from 'lucide-react';
 
 interface RewardStats {
   totalRounds: number;
@@ -51,16 +52,22 @@ export const Rewards: React.FC = () => {
       icon: Percent,
       title: 'Winner Reward (15%)',
       description: 'The volume leader receives 15% of the reward wallet balance when the round ends.',
+      color: 'text-candle-green',
+      bgColor: 'bg-candle-green'
     },
     {
       icon: Clock,
       title: 'Instant Distribution',
       description: 'Rewards are distributed automatically within seconds of round completion.',
+      color: 'text-blue-400',
+      bgColor: 'bg-blue-400'
     },
     {
       icon: CheckCircle,
       title: 'Transparent & On-Chain',
       description: 'All transactions are verifiable on Solscan. No hidden fees, no tricks.',
+      color: 'text-yellow-400',
+      bgColor: 'bg-yellow-400'
     },
   ];
 
@@ -72,167 +79,188 @@ export const Rewards: React.FC = () => {
   };
 
   return (
-      <section id="rewards" className="py-24 bg-retro-black">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="rewards" className="py-32 bg-retro-black relative overflow-hidden">
+        <div className="absolute inset-0 retro-grid opacity-20" />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Title */}
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-display text-candle-green text-shadow-retro mb-4 uppercase">
-              REWARD SYSTEM
-            </h2>
-            <p className="text-xl text-retro-white font-body max-w-3xl mx-auto">
-              Creator fees go directly to volume leaders. Trade more, earn more.
+          <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-20"
+          >
+            <div className="inline-block pixel-box-pepe px-8 py-4 mb-6">
+              <h2 className="text-5xl md:text-6xl font-display text-black uppercase">
+                REWARD SYSTEM
+              </h2>
+            </div>
+            <p className="text-2xl text-retro-white font-body max-w-3xl mx-auto">
+              Creator fees go directly to <span className="text-candle-green">volume leaders</span>. Trade more, earn more.
             </p>
-          </div>
+          </motion.div>
 
           {/* Two Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-20">
 
             {/* Reward Info */}
-            <div className="pixel-box p-8 bg-retro-black">
-              <div className="flex items-center space-x-3 mb-6">
-                <DollarSign className="w-8 h-8 text-candle-green" />
-                <h3 className="text-2xl font-display text-candle-green text-shadow-retro uppercase">
+            <motion.div
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                className="pixel-box p-10 bg-retro-gray-dark"
+            >
+              <div className="flex items-center space-x-4 mb-8">
+                <div className="pixel-box bg-candle-green p-4">
+                  <DollarSign className="w-10 h-10 text-black" strokeWidth={3} />
+                </div>
+                <h3 className="text-3xl font-display text-candle-green text-shadow-retro uppercase">
                   How Rewards Work
                 </h3>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {rewardItems.map((item, index) => (
-                    <div key={index} className="flex items-start space-x-4">
-                      <div className="pixel-box bg-retro-black p-3 flex-shrink-0">
-                        <item.icon className="w-6 h-6 text-candle-green" />
+                    <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: index * 0.1 }}
+                        className="flex items-start space-x-5"
+                    >
+                      <div className={`pixel-box ${item.bgColor} p-4 flex-shrink-0`}>
+                        <item.icon className="w-7 h-7 text-black" strokeWidth={2.5} />
                       </div>
                       <div>
-                        <h4 className="text-retro-white font-display text-sm mb-1 uppercase">
+                        <h4 className={`${item.color} font-display text-lg mb-2 uppercase`}>
                           {item.title}
                         </h4>
-                        <p className="text-retro-white font-body text-base opacity-80">
+                        <p className="text-retro-white font-body text-base leading-relaxed opacity-90">
                           {item.description}
                         </p>
                       </div>
-                    </div>
+                    </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
             {/* Fee Flow */}
-            <div className="pixel-box p-8 bg-retro-black">
-              <h3 className="text-2xl font-display text-candle-green text-shadow-retro uppercase mb-6">
-                Fee Flow Each Round
-              </h3>
-
-              <div className="space-y-4">
-                {/* Step 1 */}
-                <div className="pixel-box bg-retro-gray-dark p-4">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <span className="pixel-box bg-candle-green text-black px-3 py-1 font-display text-sm">1</span>
-                    <span className="text-candle-green font-display text-sm">CREATOR FEES COLLECTED</span>
-                  </div>
-                  <p className="text-retro-white font-body text-sm opacity-80">
-                    All trading fees accumulate during the 15-minute round
-                  </p>
+            <motion.div
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                className="pixel-box p-10 bg-retro-gray-dark"
+            >
+              <div className="flex items-center space-x-4 mb-8">
+                <div className="pixel-box bg-blue-400 p-4">
+                  <Zap className="w-10 h-10 text-black" strokeWidth={2.5} />
                 </div>
-
-                {/* Step 2 */}
-                <div className="pixel-box bg-retro-gray-dark p-4">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <span className="pixel-box bg-candle-green text-black px-3 py-1 font-display text-sm">2</span>
-                    <span className="text-candle-green font-display text-sm">FEES AUTO-CLAIMED</span>
-                  </div>
-                  <p className="text-retro-white font-body text-sm opacity-80">
-                    When timer hits zero, fees are automatically claimed
-                  </p>
-                </div>
-
-                {/* Step 3 */}
-                <div className="pixel-box bg-retro-gray-dark p-4">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <span className="pixel-box bg-candle-green text-black px-3 py-1 font-display text-sm">3</span>
-                    <span className="text-candle-green font-display text-sm">DISTRIBUTION</span>
-                  </div>
-                  <div className="text-retro-white font-body text-sm opacity-80 space-y-1">
-                    <p>• 70% → Treasury Wallet</p>
-                    <p>• 20% → Reward Wallet</p>
-                    <p>• 10% → Buyback & Burn</p>
-                  </div>
-                </div>
-
-                {/* Step 4 */}
-                <div className="pixel-box bg-retro-gray-dark p-4">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <span className="pixel-box bg-candle-green text-black px-3 py-1 font-display text-sm">4</span>
-                    <span className="text-candle-green font-display text-sm">WINNER REWARDED</span>
-                  </div>
-                  <p className="text-retro-white font-body text-sm opacity-80">
-                    15% of reward wallet sent to volume king, 5% becomes next round's start reward
-                  </p>
-                </div>
+                <h3 className="text-3xl font-display text-blue-400 text-shadow-retro uppercase">
+                  Fee Flow Each Round
+                </h3>
               </div>
-            </div>
+
+              <div className="space-y-5">
+                {[
+                  { step: '1', text: 'CREATOR FEES COLLECTED', desc: 'All trading fees accumulate during the 15-minute round' },
+                  { step: '2', text: 'FEES AUTO-CLAIMED', desc: 'When timer hits zero, fees are automatically claimed' },
+                  { step: '3', text: 'DISTRIBUTION', desc: '70% Treasury • 20% Reward Pool • 10% Buyback & Burn' },
+                  { step: '4', text: 'WINNER REWARDED', desc: '15% of reward wallet sent to volume king, 5% becomes next round start' },
+                ].map((item, index) => (
+                    <motion.div
+                        key={item.step}
+                        initial={{ opacity: 0, x: 20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: index * 0.1 }}
+                        className="pixel-box bg-retro-black p-6 relative group hover:bg-retro-gray transition-all"
+                    >
+                      <div className="flex items-start space-x-4">
+                        <div className="pixel-box bg-candle-green text-black px-4 py-2 font-display text-lg flex-shrink-0">
+                          {item.step}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className="text-candle-green font-display text-base uppercase">
+                              {item.text}
+                            </span>
+                            <ArrowRight className="w-4 h-4 text-candle-green opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                          <p className="text-retro-white font-body text-sm opacity-80 leading-relaxed">
+                            {item.desc}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                ))}
+              </div>
+            </motion.div>
           </div>
 
+          {/* Section Divider */}
+          <div className="section-divider mb-20" />
+
           {/* Stats */}
-          <div className="pixel-box p-8 bg-retro-black">
-            <div className="flex items-center justify-center mb-6">
-              <h3 className="text-2xl font-display text-candle-green text-shadow-retro uppercase">
+          <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="pixel-box p-10 bg-retro-gray-dark"
+          >
+            <div className="flex items-center justify-center mb-10">
+              <h3 className="text-4xl font-display text-candle-green text-shadow-retro uppercase">
                 PROTOCOL STATS
               </h3>
-              <button
+              <motion.button
                   onClick={fetchStats}
                   disabled={loading}
-                  className="ml-4 pixel-box bg-retro-black p-2 text-candle-green hover:bg-retro-gray-dark transition-colors disabled:opacity-50"
-                  title="Refresh stats"
+                  className="ml-6 pixel-box bg-retro-black px-4 py-3 text-candle-green hover:bg-retro-gray transition-colors disabled:opacity-50"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
               >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              </button>
+                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+              </motion.button>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              <div className="text-center">
-                <div className="text-4xl font-display text-candle-green text-shadow-retro mb-2">
-                  {stats.totalRounds.toLocaleString()}
-                </div>
-                <div className="text-retro-white font-body text-sm opacity-80">
-                  Total Rounds
-                </div>
-              </div>
-
-              <div className="text-center">
-                <div className="text-4xl font-display text-candle-green text-shadow-retro mb-2">
-                  {formatSOL(stats.totalRewards)}
-                </div>
-                <div className="text-retro-white font-body text-sm opacity-80">
-                  Total Rewards (SOL)
-                </div>
-              </div>
-
-              <div className="text-center">
-                <div className="text-4xl font-display text-candle-green text-shadow-retro mb-2">
-                  {stats.uniqueWinners.toLocaleString()}
-                </div>
-                <div className="text-retro-white font-body text-sm opacity-80">
-                  Unique Winners
-                </div>
-              </div>
-
-              <div className="text-center">
-                <div className="text-4xl font-display text-candle-green text-shadow-retro mb-2">
-                  {formatSOL(stats.avgReward)}
-                </div>
-                <div className="text-retro-white font-body text-sm opacity-80">
-                  Avg. Reward (SOL)
-                </div>
-              </div>
+              {[
+                { value: stats.totalRounds.toLocaleString(), label: 'Total Rounds' },
+                { value: formatSOL(stats.totalRewards), label: 'Total Rewards (SOL)' },
+                { value: stats.uniqueWinners.toLocaleString(), label: 'Unique Winners' },
+                { value: formatSOL(stats.avgReward), label: 'Avg. Reward (SOL)' },
+              ].map((stat, index) => (
+                  <motion.div
+                      key={stat.label}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.1 }}
+                      className="text-center pixel-box bg-retro-black p-8 card-hover"
+                  >
+                    <div className="text-5xl font-display text-candle-green text-shadow-retro mb-3 tabular-nums">
+                      {stat.value}
+                    </div>
+                    <div className="text-retro-white font-body opacity-90">
+                      {stat.label}
+                    </div>
+                  </motion.div>
+              ))}
             </div>
-          </div>
+          </motion.div>
 
           {/* Note */}
-          <div className="mt-8 pixel-box bg-retro-black p-4">
-            <p className="text-candle-green font-display text-xs text-center">
+          <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mt-10 pixel-box bg-pepe-green p-6"
+          >
+            <p className="text-black font-display text-base text-center">
               💡 Always 0.02 SOL reserved for transaction fees • All rewards verifiable on-chain
             </p>
-          </div>
+          </motion.div>
         </div>
       </section>
   );

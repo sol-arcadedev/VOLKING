@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Clock } from 'lucide-react';
 
 interface CountdownData {
     minutes: number;
@@ -33,10 +34,7 @@ const useCountdown = (): CountdownData => {
             setCountdown(calculateTimeRemaining());
         };
 
-        // Initial calculation
         updateCountdown();
-
-        // Update every second
         const interval = setInterval(updateCountdown, 1000);
 
         return () => clearInterval(interval);
@@ -47,35 +45,73 @@ const useCountdown = (): CountdownData => {
 
 export const Timer: React.FC = () => {
     const { minutes, seconds, progress } = useCountdown();
+    const isUrgent = minutes === 0 && seconds <= 30;
 
     return (
         <div className="inline-block">
-            <div className="pixel-box p-6 bg-retro-black">
-                <div className="flex items-center justify-center space-x-3 mb-4">
-                    <h3 className="text-lg font-display text-candle-green uppercase text-shadow-retro">
-                        NEXT ROUND IN
+            <motion.div
+                className={`pixel-box p-8 ${isUrgent ? 'border-pulse' : 'bg-retro-black'}`}
+                animate={isUrgent ? { scale: [1, 1.02, 1] } : {}}
+                transition={isUrgent ? { duration: 0.5, repeat: Infinity } : {}}
+            >
+                {/* Header */}
+                <div className="flex items-center justify-center space-x-3 mb-6">
+                    <Clock className={`w-8 h-8 ${isUrgent ? 'text-candle-red animate-pulse' : 'text-candle-green'}`} />
+                    <h3 className={`text-2xl font-display uppercase text-shadow-retro ${
+                        isUrgent ? 'text-candle-red' : 'text-candle-green'
+                    }`}>
+                        {isUrgent ? '⚠️ ROUND ENDING!' : 'NEXT ROUND IN'}
                     </h3>
                 </div>
 
-                <div className="flex items-center justify-center space-x-4 mb-4">
-                    <TimeUnit value={minutes} label="MIN" />
-                    <div className="text-5xl font-display text-candle-green blink">:</div>
-                    <TimeUnit value={seconds} label="SEC" />
+                {/* Timer Display */}
+                <div className="flex items-center justify-center space-x-6 mb-6">
+                    <TimeUnit value={minutes} label="MIN" isUrgent={isUrgent} />
+                    <motion.div
+                        className={`text-6xl font-display ${isUrgent ? 'text-candle-red' : 'text-candle-green'} blink`}
+                        animate={{ opacity: [1, 0, 1] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                    >
+                        :
+                    </motion.div>
+                    <TimeUnit value={seconds} label="SEC" isUrgent={isUrgent} />
                 </div>
 
                 {/* Progress Bar */}
-                <div className="w-full bg-retro-black h-6 border-3 border-candle-green relative">
+                <div className="w-full bg-retro-black h-8 border-4 border-candle-green relative mb-6 overflow-hidden">
                     <motion.div
-                        className="h-full bg-candle-green"
+                        className={`h-full ${isUrgent ? 'bg-candle-red' : 'bg-candle-green'}`}
                         animate={{ width: `${progress}%` }}
-                        transition={{ duration: 0.3 }}
-                    />
+                        transition={{ duration: 0.5 }}
+                    >
+                        {/* Animated scanline effect on progress bar */}
+                        <motion.div
+                            className="absolute inset-0 bg-white"
+                            animate={{
+                                x: ['-100%', '100%'],
+                                opacity: [0, 0.3, 0]
+                            }}
+                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                        />
+                    </motion.div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="font-display text-black text-sm z-10 mix-blend-difference">
+                            {progress.toFixed(0)}%
+                        </span>
+                    </div>
                 </div>
 
-                <p className="text-center text-retro-white font-body text-lg mt-4 uppercase">
-                    &gt; BE THE KING!
-                </p>
-            </div>
+                {/* Call to Action */}
+                <motion.p
+                    className={`text-center font-display text-xl uppercase ${
+                        isUrgent ? 'text-candle-red' : 'text-candle-green'
+                    }`}
+                    animate={isUrgent ? { opacity: [1, 0.5, 1] } : {}}
+                    transition={isUrgent ? { duration: 0.8, repeat: Infinity } : {}}
+                >
+                    {isUrgent ? '► TRADE NOW OR LOSE!' : '► BE THE KING!'}
+                </motion.p>
+            </motion.div>
         </div>
     );
 };
@@ -83,23 +119,33 @@ export const Timer: React.FC = () => {
 interface TimeUnitProps {
     value: number;
     label: string;
+    isUrgent?: boolean;
 }
 
-const TimeUnit: React.FC<TimeUnitProps> = ({ value, label }) => {
+const TimeUnit: React.FC<TimeUnitProps> = ({ value, label, isUrgent = false }) => {
     return (
         <div className="text-center">
             <motion.div
                 key={value}
-                initial={{ scale: 1.1 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.1 }}
-                className="pixel-box bg-retro-black p-4 min-w-[100px]"
+                initial={{ scale: 1.1, opacity: 0.8 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.2 }}
+                className={`pixel-box ${isUrgent ? 'bg-candle-red bg-opacity-20 border-candle-red' : 'bg-retro-black'} p-6 min-w-[120px] relative overflow-hidden`}
             >
-                <div className="text-5xl font-display text-candle-green text-shadow-retro tabular-nums">
+                {/* Background glow effect */}
+                {isUrgent && (
+                    <motion.div
+                        className="absolute inset-0 bg-candle-red"
+                        animate={{ opacity: [0.1, 0.3, 0.1] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                    />
+                )}
+
+                <div className={`text-6xl font-display ${isUrgent ? 'text-candle-red' : 'text-candle-green'} text-shadow-retro tabular-nums relative z-10`}>
                     {value.toString().padStart(2, '0')}
                 </div>
             </motion.div>
-            <div className="text-xs text-candle-green-dark font-display mt-2 uppercase">
+            <div className={`text-sm ${isUrgent ? 'text-candle-red' : 'text-pepe-green'} font-display mt-3 uppercase tracking-wider`}>
                 {label}
             </div>
         </div>

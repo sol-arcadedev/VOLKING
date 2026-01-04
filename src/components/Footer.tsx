@@ -1,27 +1,37 @@
 import React from 'react';
-import { Twitter, Send, Github } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Twitter, Send, Github, ExternalLink } from 'lucide-react';
 import { TOKEN_CONFIG, NAVIGATION_LINKS, SOCIAL_LINKS } from '../constants';
 
 export const Footer: React.FC = () => {
   return (
-      <footer className="bg-retro-black border-t-4 border-candle-green py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+      <footer className="bg-retro-black border-t-4 border-candle-green py-16 relative overflow-hidden">
+        <div className="absolute inset-0 retro-grid opacity-10" />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
 
             {/* Brand */}
             <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center space-x-3 mb-4">
-                <img
-                    src="/volking-logo.png"
-                    alt="VOLKING"
-                    className="w-12 h-12"
-                    style={{ imageRendering: 'pixelated' }}
-                />
-                <span className="text-2xl font-display text-candle-green text-shadow-retro">
-                                {TOKEN_CONFIG.name}
-                            </span>
-              </div>
-              <p className="text-retro-white font-body text-lg mb-4 max-w-md">
+              <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="flex items-center space-x-4 mb-6"
+              >
+                <div className="pixel-box-pepe p-3">
+                  <img
+                      src="/volking-logo.png"
+                      alt="VOLKING"
+                      className="w-16 h-16"
+                      style={{ imageRendering: 'pixelated' }}
+                  />
+                </div>
+                <span className="text-3xl font-display text-candle-green text-shadow-retro">
+                  {TOKEN_CONFIG.name}
+                </span>
+              </motion.div>
+              <p className="text-retro-white font-body text-lg mb-6 max-w-md leading-relaxed">
                 {TOKEN_CONFIG.description}
               </p>
               <div className="flex space-x-4">
@@ -33,10 +43,10 @@ export const Footer: React.FC = () => {
 
             {/* Quick Links */}
             <div>
-              <h4 className="text-candle-green font-display text-sm mb-4 uppercase text-shadow-retro">
+              <h4 className="text-candle-green font-display text-lg mb-6 uppercase text-shadow-retro">
                 Quick Links
               </h4>
-              <ul className="space-y-2">
+              <ul className="space-y-3">
                 {NAVIGATION_LINKS.map((link) => (
                     <FooterLink key={link.name} href={link.href}>
                       {link.name}
@@ -50,10 +60,10 @@ export const Footer: React.FC = () => {
 
             {/* Resources */}
             <div>
-              <h4 className="text-candle-green font-display text-sm mb-4 uppercase text-shadow-retro">
+              <h4 className="text-candle-green font-display text-lg mb-6 uppercase text-shadow-retro">
                 Resources
               </h4>
-              <ul className="space-y-2">
+              <ul className="space-y-3">
                 <FooterLink href="#">Whitepaper</FooterLink>
                 <FooterLink href="#">Documentation</FooterLink>
                 <FooterLink href="#">Contract</FooterLink>
@@ -63,27 +73,39 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Fee Distribution Reminder */}
-          <div className="pixel-box bg-retro-gray-dark p-4 mb-8">
-            <p className="text-candle-green font-display text-xs text-center">
+          <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="pixel-box bg-pepe-green p-6 mb-10"
+          >
+            <p className="text-black font-display text-base text-center">
               📊 FEE SPLIT: 70% Treasury • 20% Reward Pool (15% winner + 5% next round) • 10% Buyback & Burn
             </p>
-          </div>
+          </motion.div>
 
           {/* Bottom */}
-          <div className="border-t-2 border-retro-gray-dark pt-8">
+          <div className="border-t-2 border-retro-gray pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-              <p className="text-retro-white font-body text-sm">
+              <p className="text-retro-white font-body text-base">
                 © {new Date().getFullYear()} {TOKEN_CONFIG.name}. All rights reserved.
               </p>
-              <div className="flex space-x-6 text-sm">
-                <a href="#" className="text-retro-white hover:text-candle-green font-body">
+              <div className="flex space-x-8">
+                <a href="#" className="text-retro-white hover:text-candle-green font-body text-base transition-colors">
                   Terms of Service
                 </a>
-                <a href="#" className="text-retro-white hover:text-candle-green font-body">
+                <a href="#" className="text-retro-white hover:text-candle-green font-body text-base transition-colors">
                   Privacy Policy
                 </a>
               </div>
             </div>
+          </div>
+
+          {/* Powered by message */}
+          <div className="mt-8 text-center">
+            <p className="text-retro-white opacity-50 font-body text-sm">
+              Made with 💚 by the VOLKING community
+            </p>
           </div>
         </div>
       </footer>
@@ -98,15 +120,17 @@ interface SocialLinkProps {
 
 const SocialLink: React.FC<SocialLinkProps> = ({ href, icon: Icon, label }) => {
   return (
-      <a
+      <motion.a
           href={href}
           target="_blank"
           rel="noopener noreferrer"
           aria-label={label}
-          className="pixel-box bg-retro-black p-3 text-candle-green hover:bg-retro-gray-dark transition-colors inline-block"
+          className="pixel-box bg-retro-gray-dark p-4 text-candle-green hover:bg-pepe-green hover:text-black transition-all inline-block group"
+          whileHover={{ scale: 1.1, y: -4 }}
+          whileTap={{ scale: 0.95 }}
       >
-        <Icon className="w-5 h-5" />
-      </a>
+        <Icon className="w-6 h-6" />
+      </motion.a>
   );
 };
 
@@ -123,9 +147,11 @@ const FooterLink: React.FC<FooterLinkProps> = ({ href, children, external }) => 
             href={href}
             target={external ? '_blank' : undefined}
             rel={external ? 'noopener noreferrer' : undefined}
-            className="text-retro-white hover:text-candle-green font-body text-sm"
+            className="text-retro-white hover:text-candle-green font-body text-base transition-colors flex items-center space-x-2 group"
         >
-          {children}
+          <span className="group-hover:translate-x-1 transition-transform">►</span>
+          <span>{children}</span>
+          {external && <ExternalLink className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />}
         </a>
       </li>
   );

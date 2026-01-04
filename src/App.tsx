@@ -11,7 +11,7 @@ import './index.css';
 
 const App: React.FC = () => {
     return (
-        <div className="min-h-screen bg-retro-black text-white">
+        <div className="min-h-screen bg-retro-black text-white overflow-x-hidden">
             <Header />
             <main>
                 <Hero />

@@ -48,7 +48,6 @@ const formatReward = (reward: number): string => {
 
 const formatTimeAgo = (timestamp: number): string => {
     const seconds = Math.floor((Date.now() - timestamp) / 1000);
-
     if (seconds < 60) return `${seconds}s ago`;
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
     if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
@@ -76,7 +75,6 @@ export const HallOfDegens: React.FC = () => {
 
             const data: HallOfDegensResponse = await response.json();
             setDegens(data.degens);
-            // Limit to last 50 reward transactions as per requirements
             setRecentTransfers((data.recentTransfers || []).slice(0, 50));
             setLastUpdate(new Date());
             setLoading(false);
@@ -107,7 +105,7 @@ export const HallOfDegens: React.FC = () => {
     });
 
     const getRankIcon = (rank: number) => {
-        if (rank === 1) return <Crown className="w-6 h-6 text-yellow-400" />;
+        if (rank === 1) return <Crown className="w-7 h-7 text-yellow-400 animate-pulse" />;
         if (rank === 2) return <Trophy className="w-6 h-6 text-gray-400" />;
         if (rank === 3) return <Trophy className="w-6 h-6 text-amber-600" />;
         return null;
@@ -122,10 +120,10 @@ export const HallOfDegens: React.FC = () => {
 
     if (loading && degens.length === 0) {
         return (
-            <section id="hall-of-degens" className="py-24 bg-retro-black">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <div className="pixel-box p-12 bg-retro-black">
-                        <div className="text-candle-green font-display text-2xl mb-4 animate-pulse">
+            <section id="hall-of-degens" className="py-32 bg-retro-black">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <div className="pixel-box p-16 bg-retro-gray-dark">
+                        <div className="text-candle-green font-display text-3xl mb-6 animate-pulse">
                             LOADING HALL OF DEGENS...
                         </div>
                     </div>
@@ -135,113 +133,131 @@ export const HallOfDegens: React.FC = () => {
     }
 
     return (
-        <section id="hall-of-degens" className="py-24 bg-retro-black">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="hall-of-degens" className="py-32 bg-gradient-to-b from-retro-black via-retro-gray-dark to-retro-black relative overflow-hidden">
+            <div className="absolute inset-0 retro-grid opacity-20" />
+
+            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
                 {/* Title & Status */}
-                <div className="text-center mb-12">
-                    <div className="flex items-center justify-center mb-4">
-                        <Crown className="w-12 h-12 text-candle-green mr-4" />
-                        <h2 className="text-4xl md:text-5xl font-display text-candle-green text-shadow-retro uppercase">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="text-center mb-16"
+                >
+                    <div className="inline-block pixel-box-pepe px-8 py-4 mb-6">
+                        <h2 className="text-5xl md:text-6xl font-display text-black uppercase flex items-center gap-4">
+                            <Crown className="w-12 h-12" />
                             HALL OF DEGENS
+                            <Crown className="w-12 h-12" />
                         </h2>
-                        <Crown className="w-12 h-12 text-candle-green ml-4" />
                     </div>
-                    <p className="text-xl text-retro-white font-body mb-4">
-                        Legendary traders who conquered the volume wars
+                    <p className="text-2xl text-retro-white font-body mb-8">
+                        Legendary traders who conquered the <span className="text-candle-green">volume wars</span>
                     </p>
 
-                    <div className="flex items-center justify-center gap-4 flex-wrap">
-                        <div className="pixel-box bg-retro-black px-4 py-2 inline-block">
+                    <div className="flex flex-wrap items-center justify-center gap-4 mb-6">
+                        <div className="pixel-box bg-retro-black px-6 py-3">
                             <span className="text-candle-green font-display text-sm">
                                 {degens.length} Unique Winners
                             </span>
                         </div>
-                        <div className="pixel-box bg-retro-black px-4 py-2 inline-block">
-                            <span className={`font-display text-sm ${error ? 'text-red-500' : 'text-candle-green'}`}>
-                                {error ? '⚠️ Offline' : '🟢 Live'}
-                            </span>
+                        <div className="pixel-box bg-retro-black px-6 py-3">
+                            <div className="flex items-center space-x-2">
+                                <div className={`w-3 h-3 ${error ? 'bg-red-500' : 'bg-candle-green'} animate-pulse`} />
+                                <span className={`font-display text-sm ${error ? 'text-red-500' : 'text-candle-green'}`}>
+                                    {error ? '⚠️ Offline' : '🟢 Live'}
+                                </span>
+                            </div>
                         </div>
-                        <button
+                        <motion.button
                             onClick={fetchHallOfDegens}
                             disabled={loading}
-                            className="pixel-box bg-retro-black p-2 text-candle-green hover:bg-retro-gray-dark transition-colors disabled:opacity-50"
-                            title="Refresh data"
+                            className="pixel-box bg-retro-black px-4 py-3 text-candle-green hover:bg-retro-gray-dark transition-colors disabled:opacity-50"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
                         >
                             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-                        </button>
+                        </motion.button>
                     </div>
 
                     {error && (
-                        <div className="mt-4 pixel-box-red bg-retro-black px-4 py-2 inline-block">
-                            <span className="text-red-500 font-body text-sm">{error}</span>
-                        </div>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="pixel-box-red bg-retro-gray-dark px-6 py-3 inline-block"
+                        >
+                            <span className="text-red-500 font-body">{error}</span>
+                        </motion.div>
                     )}
 
-                    <div className="mt-2 text-retro-white font-body text-sm opacity-60">
+                    <div className="text-retro-white font-body text-sm opacity-60 mt-4">
                         Last updated: {lastUpdate.toLocaleTimeString()}
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Sort Controls */}
-                <div className="flex justify-center gap-4 mb-8 flex-wrap">
-                    <button
-                        onClick={() => setSortBy('wins')}
-                        className={`pixel-box px-6 py-3 font-display text-sm uppercase transition-colors ${
-                            sortBy === 'wins'
-                                ? 'bg-candle-green text-black'
-                                : 'bg-retro-black text-candle-green hover:bg-retro-gray-dark'
-                        }`}
-                    >
-                        Sort by Wins
-                    </button>
-                    <button
-                        onClick={() => setSortBy('rewards')}
-                        className={`pixel-box px-6 py-3 font-display text-sm uppercase transition-colors ${
-                            sortBy === 'rewards'
-                                ? 'bg-candle-green text-black'
-                                : 'bg-retro-black text-candle-green hover:bg-retro-gray-dark'
-                        }`}
-                    >
-                        Sort by Rewards
-                    </button>
-                    <button
-                        onClick={() => setSortBy('volume')}
-                        className={`pixel-box px-6 py-3 font-display text-sm uppercase transition-colors ${
-                            sortBy === 'volume'
-                                ? 'bg-candle-green text-black'
-                                : 'bg-retro-black text-candle-green hover:bg-retro-gray-dark'
-                        }`}
-                    >
-                        Sort by Volume
-                    </button>
-                </div>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="flex justify-center gap-4 mb-12 flex-wrap"
+                >
+                    {[
+                        { key: 'wins' as const, label: 'Sort by Wins' },
+                        { key: 'rewards' as const, label: 'Sort by Rewards' },
+                        { key: 'volume' as const, label: 'Sort by Volume' }
+                    ].map((btn) => (
+                        <motion.button
+                            key={btn.key}
+                            onClick={() => setSortBy(btn.key)}
+                            className={`pixel-box px-8 py-4 font-display text-sm uppercase transition-all ${
+                                sortBy === btn.key
+                                    ? 'bg-candle-green text-black shadow-retro-lg'
+                                    : 'bg-retro-black text-candle-green hover:bg-retro-gray-dark'
+                            }`}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            {btn.label}
+                        </motion.button>
+                    ))}
+                </motion.div>
 
                 {/* Reward Pool Display */}
-                <div className="mb-12">
+                <div className="mb-16">
                     <RewardPoolDisplay />
                 </div>
 
+                {/* Section Divider */}
+                <div className="section-divider mb-16" />
+
                 {/* Hall of Degens Table */}
-                <div className="pixel-box bg-retro-black mb-12">
-                    <div className="border-b-3 border-candle-green px-6 py-4 bg-retro-gray-dark">
-                        <div className="grid grid-cols-12 gap-4 font-display text-xs text-candle-green uppercase">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="pixel-box bg-retro-gray-dark mb-16"
+                >
+                    <div className="border-b-4 border-candle-green px-8 py-5 bg-retro-black">
+                        <div className="grid grid-cols-12 gap-4 font-display text-sm text-candle-green uppercase">
                             <div className="col-span-1">RANK</div>
                             <div className="col-span-4">WALLET</div>
                             <div className="col-span-2 text-center">WINS</div>
                             <div className="col-span-3 text-right">TOTAL REWARDS</div>
-                            <div className="col-span-2 text-right">VOLUME (WON)</div>
+                            <div className="col-span-2 text-right">VOLUME</div>
                         </div>
                     </div>
 
-                    <div className="max-h-96 overflow-y-auto">
+                    <div className="max-h-[600px] overflow-y-auto">
                         {sortedDegens.length === 0 ? (
-                            <div className="px-6 py-12 text-center">
-                                <div className="text-retro-white font-body text-lg mb-2">
+                            <div className="px-8 py-16 text-center">
+                                <div className="text-5xl mb-4">👑</div>
+                                <div className="text-retro-white font-body text-xl mb-3">
                                     No winners yet
                                 </div>
-                                <div className="text-candle-green font-display text-sm">
-                                    Be the first to enter the Hall of Degens! 👑
+                                <div className="text-candle-green font-display text-base">
+                                    Be the first to enter the Hall of Degens!
                                 </div>
                             </div>
                         ) : (
@@ -252,10 +268,10 @@ export const HallOfDegens: React.FC = () => {
                                 return (
                                     <motion.div
                                         key={degen.wallet}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ delay: index * 0.02 }}
-                                        className={`px-6 py-4 border-b-2 border-retro-gray-dark ${
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: index * 0.03 }}
+                                        className={`px-8 py-5 border-b-2 border-retro-gray transition-all hover:bg-retro-black ${
                                             isTopThree ? 'bg-candle-green bg-opacity-10' : ''
                                         }`}
                                     >
@@ -264,7 +280,7 @@ export const HallOfDegens: React.FC = () => {
                                             <div className="col-span-1">
                                                 <div className="flex items-center space-x-2">
                                                     {getRankIcon(displayRank)}
-                                                    <span className={`font-display text-lg ${
+                                                    <span className={`font-display text-xl ${
                                                         isTopThree ? 'text-candle-green' : 'text-retro-white'
                                                     }`}>
                                                         {getRankLabel(displayRank)}
@@ -272,7 +288,7 @@ export const HallOfDegens: React.FC = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Wallet Address */}
+                                            {/* Wallet */}
                                             <div className="col-span-4">
                                                 <a
                                                     href={`https://solscan.io/account/${degen.wallet}`}
@@ -283,15 +299,15 @@ export const HallOfDegens: React.FC = () => {
                                                     {formatWallet(degen.wallet, 6)}
                                                 </a>
                                                 {displayRank === 1 && (
-                                                    <div className="text-xs font-display text-candle-green mt-1">
+                                                    <div className="text-xs font-display text-candle-green mt-1 animate-pulse">
                                                         👑 ULTIMATE DEGEN
                                                     </div>
                                                 )}
                                             </div>
 
-                                            {/* Total Won Rounds */}
+                                            {/* Wins */}
                                             <div className="col-span-2 text-center">
-                                                <div className="pixel-box bg-retro-black px-3 py-2 inline-block">
+                                                <div className="pixel-box bg-retro-black px-4 py-2 inline-block">
                                                     <div className="flex items-center justify-center space-x-2">
                                                         <Trophy className="w-4 h-4 text-candle-green" />
                                                         <span className="font-display text-candle-green text-lg">
@@ -301,22 +317,22 @@ export const HallOfDegens: React.FC = () => {
                                                 </div>
                                             </div>
 
-                                            {/* Total Won Rewards */}
+                                            {/* Rewards */}
                                             <div className="col-span-3 text-right">
-                                                <div className="font-display text-candle-green text-lg">
+                                                <div className="font-display text-candle-green text-xl">
                                                     {formatReward(degen.totalRewards)} SOL
                                                 </div>
-                                                <div className="text-xs text-retro-white opacity-60">
+                                                <div className="text-xs text-retro-white opacity-60 font-body">
                                                     Total earned
                                                 </div>
                                             </div>
 
-                                            {/* Total Contributed Volume (when won) */}
+                                            {/* Volume */}
                                             <div className="col-span-2 text-right">
                                                 <div className="font-display text-candle-green text-lg">
                                                     {formatVolume(degen.totalVolume)} SOL
                                                 </div>
-                                                <div className="text-xs text-retro-white opacity-60">
+                                                <div className="text-xs text-retro-white opacity-60 font-body">
                                                     Win volume
                                                 </div>
                                             </div>
@@ -326,58 +342,67 @@ export const HallOfDegens: React.FC = () => {
                             })
                         )}
                     </div>
-                </div>
+                </motion.div>
 
-                {/* Last 50 Reward Transactions */}
-                <div className="mb-12">
-                    <div className="flex items-center justify-center mb-6">
-                        <DollarSign className="w-8 h-8 text-candle-green mr-3" />
-                        <h3 className="text-3xl font-display text-candle-green text-shadow-retro uppercase">
-                            LAST 50 REWARD TRANSACTIONS
-                        </h3>
+                {/* Section Divider */}
+                <div className="section-divider mb-16" />
+
+                {/* Recent Transactions */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="mb-16"
+                >
+                    <div className="text-center mb-10">
+                        <div className="inline-block pixel-box bg-pepe-green px-6 py-3 mb-4">
+                            <h3 className="text-3xl font-display text-black uppercase flex items-center gap-3">
+                                <DollarSign className="w-8 h-8" />
+                                LAST 50 REWARD TRANSACTIONS
+                            </h3>
+                        </div>
                     </div>
 
-                    <div className="pixel-box bg-retro-black">
-                        <div className="border-b-3 border-candle-green px-6 py-4 bg-retro-gray-dark">
-                            <div className="grid grid-cols-12 gap-4 font-display text-xs text-candle-green uppercase">
+                    <div className="pixel-box bg-retro-gray-dark">
+                        <div className="border-b-4 border-candle-green px-8 py-5 bg-retro-black">
+                            <div className="grid grid-cols-12 gap-4 font-display text-sm text-candle-green uppercase">
                                 <div className="col-span-1">#</div>
-                                <div className="col-span-4">WINNER WALLET</div>
+                                <div className="col-span-4">WINNER</div>
                                 <div className="col-span-2 text-right">AMOUNT</div>
                                 <div className="col-span-3 text-right">TIME</div>
-                                <div className="col-span-2 text-center">VERIFY TX</div>
+                                <div className="col-span-2 text-center">VERIFY</div>
                             </div>
                         </div>
 
-                        <div className="max-h-96 overflow-y-auto">
+                        <div className="max-h-[600px] overflow-y-auto">
                             {recentTransfers.length === 0 ? (
-                                <div className="px-6 py-12 text-center">
-                                    <div className="text-retro-white font-body text-lg mb-2">
+                                <div className="px-8 py-16 text-center">
+                                    <div className="text-5xl mb-4">💰</div>
+                                    <div className="text-retro-white font-body text-xl mb-3">
                                         No reward transfers yet
                                     </div>
-                                    <div className="text-candle-green font-display text-sm">
-                                        Win rounds to receive SOL rewards! 💰
+                                    <div className="text-candle-green font-display text-base">
+                                        Win rounds to receive SOL rewards!
                                     </div>
                                 </div>
                             ) : (
                                 recentTransfers.map((transfer, index) => (
                                     <motion.div
                                         key={`${transfer.signature}-${index}`}
-                                        initial={{ opacity: 0 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ delay: index * 0.01 }}
-                                        className="px-6 py-4 border-b-2 border-retro-gray-dark hover:bg-retro-gray-dark transition-colors"
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: index * 0.02 }}
+                                        className="px-8 py-5 border-b-2 border-retro-gray hover:bg-retro-black transition-all"
                                     >
                                         <div className="grid grid-cols-12 gap-4 items-center">
-                                            {/* Index */}
                                             <div className="col-span-1">
-                                                <div className="pixel-box bg-retro-black px-2 py-1 inline-block">
-                                                    <span className="font-display text-candle-green text-xs">
+                                                <div className="pixel-box bg-retro-black px-3 py-1 inline-block">
+                                                    <span className="font-display text-candle-green text-sm">
                                                         {index + 1}
                                                     </span>
                                                 </div>
                                             </div>
 
-                                            {/* Wallet Address */}
                                             <div className="col-span-4">
                                                 <a
                                                     href={`https://solscan.io/account/${transfer.wallet}`}
@@ -389,31 +414,27 @@ export const HallOfDegens: React.FC = () => {
                                                 </a>
                                             </div>
 
-                                            {/* Amount of SOL */}
                                             <div className="col-span-2 text-right">
                                                 <div className="font-display text-candle-green text-base">
                                                     {formatReward(transfer.amount)} SOL
                                                 </div>
                                             </div>
 
-                                            {/* Time */}
                                             <div className="col-span-3 text-right">
                                                 <div className="text-retro-white font-body text-sm">
                                                     {formatTimeAgo(transfer.timestamp)}
                                                 </div>
-                                                <div className="text-xs text-retro-white opacity-60">
+                                                <div className="text-xs text-retro-white opacity-60 font-body">
                                                     Round #{transfer.roundNumber || 'N/A'}
                                                 </div>
                                             </div>
 
-                                            {/* Verify TX Link to Solscan */}
                                             <div className="col-span-2 text-center">
                                                 <a
                                                     href={`https://solscan.io/tx/${transfer.signature}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="pixel-box bg-candle-green px-4 py-2 inline-flex items-center justify-center text-black hover:bg-candle-green-dark transition-colors font-display text-xs"
-                                                    title="View transaction on Solscan"
                                                 >
                                                     <ExternalLink className="w-4 h-4 mr-2" />
                                                     VERIFY
@@ -426,58 +447,57 @@ export const HallOfDegens: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="mt-4 text-center text-retro-white font-body text-sm opacity-60">
-                        Showing last {recentTransfers.length} of 50 reward transactions • All transactions verifiable on-chain
+                    <div className="mt-6 text-center text-retro-white font-body text-sm opacity-60">
+                        Showing {recentTransfers.length} of 50 reward transactions • All verifiable on-chain
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Summary Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="pixel-box p-6 bg-retro-black">
-                        <div className="flex items-center space-x-3 mb-2">
-                            <Award className="w-6 h-6 text-candle-green" />
-                            <span className="text-retro-white font-body text-sm">Total Winners</span>
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-8"
+                >
+                    <div className="pixel-box p-10 bg-retro-black card-hover">
+                        <div className="flex items-center space-x-3 mb-4">
+                            <Award className="w-8 h-8 text-candle-green" />
+                            <span className="text-retro-white font-body text-lg">Total Winners</span>
                         </div>
-                        <div className="text-3xl font-display text-candle-green text-shadow-retro">
+                        <div className="text-5xl font-display text-candle-green text-shadow-retro mb-2">
                             {degens.length}
                         </div>
-                        <div className="text-xs text-retro-white opacity-60 mt-1">
+                        <div className="text-sm text-retro-white opacity-60 font-body">
                             Unique wallets
                         </div>
                     </div>
 
-                    <div className="pixel-box p-6 bg-retro-black">
-                        <div className="flex items-center space-x-3 mb-2">
-                            <Trophy className="w-6 h-6 text-candle-green" />
-                            <span className="text-retro-white font-body text-sm">Total Wins</span>
+                    <div className="pixel-box p-10 bg-retro-black card-hover">
+                        <div className="flex items-center space-x-3 mb-4">
+                            <Trophy className="w-8 h-8 text-candle-green" />
+                            <span className="text-retro-white font-body text-lg">Total Wins</span>
                         </div>
-                        <div className="text-3xl font-display text-candle-green text-shadow-retro">
+                        <div className="text-5xl font-display text-candle-green text-shadow-retro mb-2">
                             {degens.reduce((sum, d) => sum + d.totalWins, 0)}
                         </div>
-                        <div className="text-xs text-retro-white opacity-60 mt-1">
+                        <div className="text-sm text-retro-white opacity-60 font-body">
                             All rounds combined
                         </div>
                     </div>
 
-                    <div className="pixel-box p-6 bg-retro-black">
-                        <div className="flex items-center space-x-3 mb-2">
-                            <DollarSign className="w-6 h-6 text-candle-green" />
-                            <span className="text-retro-white font-body text-sm">Total Rewards</span>
+                    <div className="pixel-box p-10 bg-retro-black card-hover">
+                        <div className="flex items-center space-x-3 mb-4">
+                            <DollarSign className="w-8 h-8 text-candle-green" />
+                            <span className="text-retro-white font-body text-lg">Total Rewards</span>
                         </div>
-                        <div className="text-3xl font-display text-candle-green text-shadow-retro">
+                        <div className="text-5xl font-display text-candle-green text-shadow-retro mb-2">
                             {formatReward(degens.reduce((sum, d) => sum + d.totalRewards, 0))} SOL
                         </div>
-                        <div className="text-xs text-retro-white opacity-60 mt-1">
+                        <div className="text-sm text-retro-white opacity-60 font-body">
                             All-time payouts
                         </div>
                     </div>
-                </div>
-
-                <div className="mt-8 pixel-box bg-retro-black p-4">
-                    <p className="text-candle-green font-display text-xs text-center">
-                        🔥 Only winners are immortalized • Updated after every round • Forever on-chain
-                    </p>
-                </div>
+                </motion.div>
             </div>
         </section>
     );
