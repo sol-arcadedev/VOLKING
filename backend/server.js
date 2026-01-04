@@ -9,7 +9,14 @@ import {
   Keypair,
   LAMPORTS_PER_SOL,
   sendAndConfirmTransaction,
+  VersionedTransaction,
 } from '@solana/web3.js';
+import {
+  TOKEN_PROGRAM_ID,
+  getAssociatedTokenAddress,
+  createBurnInstruction,
+  getAccount,
+} from '@solana/spl-token';
 import bs58 from 'bs58';
 
 const app = express();
@@ -328,7 +335,7 @@ async function distributeFees(totalFees) {
 
 /**
  * Execute buyback and burn
- * Uses Jupiter to swap SOL for tokens, then burns them
+ * Uses Jupiter to swap SOL for tokens, then burns them using SPL Token burn instruction
  * Uses the CREATOR_FEE_WALLET which already holds the 10% buyback allocation
  */
 async function executeBuybackAndBurn(amountSOL) {
@@ -349,14 +356,24 @@ async function executeBuybackAndBurn(amountSOL) {
 
   if (!creatorFeeKeypair) {
     console.log('⚠️ Creator fee wallet keypair not configured - simulating burn');
-    // Estimate tokens that would be bought
     const estimatedTokens = amountSOL * 1000000; // Placeholder rate
     return { success: true, tokensBurned: estimatedTokens, simulated: true };
   }
 
+  if (!TOKEN_ADDRESS) {
+    console.log('⚠️ TOKEN_ADDRESS not configured');
+    return { success: false, tokensBurned: 0, error: 'TOKEN_ADDRESS not configured' };
+  }
+
+  let swapSignature = null;
+  let burnSignature = null;
+  let tokensBurned = 0;
+
   try {
-    // Step 1: Get quote from Jupiter
-    console.log('   Getting Jupiter quote...');
+    // ============================================
+    // STEP 1: GET JUPITER QUOTE
+    // ============================================
+    console.log('   📊 Getting Jupiter quote...');
     const quoteUrl = `${JUPITER_API}/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${TOKEN_ADDRESS}&amount=${Math.floor(amountSOL * LAMPORTS_PER_SOL)}&slippageBps=100`;
 
     const quoteResponse = await fetch(quoteUrl);
@@ -366,11 +383,14 @@ async function executeBuybackAndBurn(amountSOL) {
       throw new Error(`Jupiter quote error: ${quote?.error || 'Unknown error'}`);
     }
 
-    const expectedTokens = parseInt(quote.outAmount) / Math.pow(10, TOKEN_DECIMALS);
-    console.log(`   Expected tokens: ${expectedTokens.toLocaleString()}`);
+    const expectedTokens = parseInt(quote.outAmount);
+    const expectedTokensDisplay = expectedTokens / Math.pow(10, TOKEN_DECIMALS);
+    console.log(`   Expected tokens: ${expectedTokensDisplay.toLocaleString()}`);
 
-    // Step 2: Get swap transaction
-    console.log('   Building swap transaction...');
+    // ============================================
+    // STEP 2: GET SWAP TRANSACTION FROM JUPITER
+    // ============================================
+    console.log('   🔄 Building swap transaction...');
     const swapResponse = await fetch(`${JUPITER_API}/swap`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -378,45 +398,140 @@ async function executeBuybackAndBurn(amountSOL) {
         quoteResponse: quote,
         userPublicKey: creatorFeeKeypair.publicKey.toString(),
         wrapAndUnwrapSol: true,
+        dynamicComputeUnitLimit: true,
+        prioritizationFeeLamports: 'auto',
       }),
     });
 
     const swapData = await swapResponse.json();
 
     if (!swapData.swapTransaction) {
-      throw new Error('Failed to get swap transaction');
+      throw new Error(`Failed to get swap transaction: ${JSON.stringify(swapData)}`);
     }
 
-    // Step 3: Execute swap
-    console.log('   Executing swap...');
-    const swapTx = Transaction.from(Buffer.from(swapData.swapTransaction, 'base64'));
-    const swapSignature = await sendAndConfirmTransaction(
+    // ============================================
+    // STEP 3: EXECUTE SWAP TRANSACTION
+    // ============================================
+    console.log('   ⚡ Executing swap...');
+
+    // Jupiter returns a versioned transaction
+    const swapTransactionBuf = Buffer.from(swapData.swapTransaction, 'base64');
+    const swapTx = VersionedTransaction.deserialize(swapTransactionBuf);
+
+    // Sign the transaction
+    swapTx.sign([creatorFeeKeypair]);
+
+    // Send and confirm
+    swapSignature = await connection.sendTransaction(swapTx, {
+      skipPreflight: false,
+      preflightCommitment: 'confirmed',
+      maxRetries: 3,
+    });
+
+    // Wait for confirmation
+    const swapConfirmation = await connection.confirmTransaction(swapSignature, 'confirmed');
+
+    if (swapConfirmation.value.err) {
+      throw new Error(`Swap transaction failed: ${JSON.stringify(swapConfirmation.value.err)}`);
+    }
+
+    console.log(`   ✅ Swap complete: ${swapSignature}`);
+
+    // ============================================
+    // STEP 4: GET TOKEN BALANCE AFTER SWAP
+    // ============================================
+    console.log('   💰 Checking token balance...');
+
+    // Wait a moment for the transaction to be fully processed
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const tokenMint = new PublicKey(TOKEN_ADDRESS);
+    const tokenAccountAddress = await getAssociatedTokenAddress(
+        tokenMint,
+        creatorFeeKeypair.publicKey
+    );
+
+    let tokenBalance = 0;
+    try {
+      const tokenAccount = await getAccount(connection, tokenAccountAddress);
+      tokenBalance = Number(tokenAccount.amount);
+      console.log(`   Token balance: ${(tokenBalance / Math.pow(10, TOKEN_DECIMALS)).toLocaleString()} tokens`);
+    } catch (error) {
+      console.log(`   ⚠️ Could not fetch token account: ${error.message}`);
+      // Use expected tokens from quote as fallback
+      tokenBalance = expectedTokens;
+    }
+
+    if (tokenBalance <= 0) {
+      console.log('   ⚠️ No tokens to burn after swap');
+      return {
+        success: true,
+        tokensBurned: 0,
+        swapSignature,
+        note: 'Swap succeeded but no tokens available to burn'
+      };
+    }
+
+    // ============================================
+    // STEP 5: BURN THE TOKENS
+    // ============================================
+    console.log(`   🔥 Burning ${(tokenBalance / Math.pow(10, TOKEN_DECIMALS)).toLocaleString()} tokens...`);
+
+    const burnInstruction = createBurnInstruction(
+        tokenAccountAddress,           // Token account to burn from
+        tokenMint,                      // Token mint
+        creatorFeeKeypair.publicKey,   // Owner of the token account
+        tokenBalance,                   // Amount to burn (in smallest units)
+        [],                            // No multisig
+        TOKEN_PROGRAM_ID               // SPL Token program
+    );
+
+    const burnTransaction = new Transaction().add(burnInstruction);
+
+    // Get recent blockhash
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
+    burnTransaction.recentBlockhash = blockhash;
+    burnTransaction.lastValidBlockHeight = lastValidBlockHeight;
+    burnTransaction.feePayer = creatorFeeKeypair.publicKey;
+
+    // Sign and send burn transaction
+    burnSignature = await sendAndConfirmTransaction(
         connection,
-        swapTx,
+        burnTransaction,
         [creatorFeeKeypair],
         { commitment: 'confirmed' }
     );
-    console.log(`   ✅ Swap complete: ${swapSignature}`);
 
-    // Step 4: Burn the tokens
-    // Note: Actual burning requires SPL token program interaction
-    // This is a placeholder for the burn transaction
-    console.log('   Burning tokens...');
-
-    // For now, track the burn
-    const tokensBurned = expectedTokens;
+    tokensBurned = tokenBalance / Math.pow(10, TOKEN_DECIMALS);
     totalSupplyBurned += tokensBurned;
 
+    console.log(`   ✅ Burn complete: ${burnSignature}`);
     console.log(`   🔥 Burned ${tokensBurned.toLocaleString()} tokens`);
+    console.log(`   📊 Total supply burned all-time: ${totalSupplyBurned.toLocaleString()}`);
 
     return {
       success: true,
       tokensBurned,
       swapSignature,
+      burnSignature,
       amountSOL,
     };
+
   } catch (error) {
     console.error('❌ Buyback & Burn error:', error);
+
+    // If swap succeeded but burn failed, still record partial success
+    if (swapSignature && !burnSignature) {
+      console.log('   ⚠️ Swap succeeded but burn failed - tokens may need manual burning');
+      return {
+        success: false,
+        tokensBurned: 0,
+        swapSignature,
+        error: error.message,
+        note: 'Swap succeeded, burn failed - manual intervention may be needed'
+      };
+    }
+
     return { success: false, tokensBurned: 0, error: error.message };
   }
 }
@@ -637,7 +752,7 @@ async function handleRoundEnd() {
       await recordBurn(
           distribution.buybackBurn,
           burnResult.tokensBurned,
-          burnResult.swapSignature || 'auto-burn'
+          burnResult.burnSignature || burnResult.swapSignature || 'auto-burn'
       );
     }
   }
