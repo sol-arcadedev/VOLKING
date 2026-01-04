@@ -38,18 +38,6 @@ const CREATOR_WALLET_PUBLIC = process.env.CREATOR_FEE_WALLET || '';
 const TREASURY_WALLET = process.env.TREASURY_WALLET || '';
 const REWARD_WALLET_PUBLIC = process.env.REWARD_WALLET_PUBLIC || '';
 
-// ============================================
-// FEE DISTRIBUTION CONSTANTS
-// ============================================
-// Per requirements:
-// - 70% to Treasury
-// - 20% to Reward Wallet
-// - 10% to Buyback & Burn (minus 0.02 SOL for fees)
-//
-// From Reward Wallet:
-// - 15% to winner
-// - 5% as next round start reward
-
 const TREASURY_PERCENTAGE = 0.70;
 const REWARD_WALLET_PERCENTAGE = 0.20;
 const BUYBACK_BURN_PERCENTAGE = 0.10;
