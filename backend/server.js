@@ -129,84 +129,46 @@ function calculateCurrentReward() {
 // WINNER & REWARD TRACKING
 // ============================================
 
-function recordWinner(wallet, volume, reward, signature, roundStartTime) {
-  const record = {
+async function recordWinner(wallet, volume, reward, signature, roundStartTime) {
+  await db.saveWinner({
     wallet,
     volume,
     reward,
     signature,
+    roundNumber,
     roundStart: roundStartTime,
-    roundNumber: roundNumber,
     timestamp: Date.now(),
-  };
+  });
 
-  winnerHistory.push(record);
-  totalRewardsPaid += reward;
-
-  rewardTransfers.unshift({
+  await db.saveRewardTransfer({
     wallet,
     amount: reward,
     signature,
-    timestamp: Date.now(),
-    roundNumber: roundNumber,
+    roundNumber,
     roundStart: roundStartTime,
+    timestamp: Date.now(),
   });
 
-  if (rewardTransfers.length > 100) {
-    rewardTransfers.pop();
-  }
+  totalRewardsPaid += reward;
 
   console.log(`🏆 Winner recorded: ${wallet.substring(0, 8)}... with ${volume.toFixed(4)} SOL volume, reward: ${reward.toFixed(4)} SOL`);
   console.log(`💰 Total rewards paid all-time: ${totalRewardsPaid.toFixed(4)} SOL`);
 }
 
-function recordBurn(amountSOL, tokensBurned, signature) {
-  const record = {
+async function recordBurn(amountSOL, tokensBurned, signature) {
+  await db.saveBurn({
     amountSOL,
     tokensBurned,
     signature,
-    roundNumber: roundNumber,
+    roundNumber,
     timestamp: Date.now(),
-  };
+  });
 
-  burnHistory.push(record);
   totalSupplyBurned += tokensBurned;
 
   console.log(`🔥 Burn recorded: ${tokensBurned} tokens (${amountSOL.toFixed(4)} SOL worth)`);
 }
 
-function calculateHallOfDegens() {
-  const degenMap = new Map();
-
-  for (const record of winnerHistory) {
-    const existing = degenMap.get(record.wallet);
-
-    if (existing) {
-      existing.totalWins += 1;
-      existing.totalRewards += record.reward;
-      existing.totalVolume += record.volume;
-      existing.lastWin = Math.max(existing.lastWin, record.timestamp);
-    } else {
-      degenMap.set(record.wallet, {
-        wallet: record.wallet,
-        totalWins: 1,
-        totalRewards: record.reward,
-        totalVolume: record.volume,
-        lastWin: record.timestamp,
-        rank: 0,
-      });
-    }
-  }
-
-  const degens = Array.from(degenMap.values())
-      .sort((a, b) => b.totalWins - a.totalWins);
-
-  degens.forEach((degen, index) => {
-    degen.rank = index + 1;
-  });
-
-  return degens;
-}
 
 // ============================================
 // INITIALIZE DATABASE AND LOAD STATE
@@ -304,46 +266,21 @@ async function handleRoundEnd() {
   // SAVE TO DATABASE
   // ============================================
 
-  // Save winner
-  await db.saveWinner({
-    wallet: winner.wallet,
-    volume: winner.volume,
-    reward: winnerReward,
-    signature: placeholderSignature,
-    roundNumber,
-    roundStart: currentRoundStart,
-    timestamp: Date.now(),
-  });
+// Save winner (this handles both winner and reward_transfer tables)
+  await recordWinner(winner.wallet, winner.volume, winnerReward, placeholderSignature, currentRoundStart);
 
-  // Save reward transfer
-  await db.saveRewardTransfer({
-    wallet: winner.wallet,
-    amount: winnerReward,
-    signature: placeholderSignature,
-    roundNumber,
-    roundStart: currentRoundStart,
-    timestamp: Date.now(),
-  });
-
-  // Update totals
-  totalRewardsPaid += winnerReward;
+// Update totals
   rewardWalletBalance -= winnerReward;
   rewardWalletBalance -= nextStartReward;
   startReward = nextStartReward;
   totalRoundsCompleted++;
 
-  // Save burn if applicable
+// Save burn if applicable
   if (buybackAmount > 0) {
-    await db.saveBurn({
-      amountSOL: buybackAmount,
-      tokensBurned: 0,
-      signature: 'pending-burn',
-      roundNumber,
-      timestamp: Date.now(),
-    });
+    await recordBurn(buybackAmount, 0, 'pending-burn');
   }
 
-  // Save global stats
+// Save global stats
   await db.updateGlobalStats({
     totalRoundsCompleted,
     totalRewardsPaid,
@@ -413,7 +350,7 @@ async function isUserWallet(address) {
     const data = await response.json();
     const accountInfo = data.result?.value;
 
-    let isUser = false;
+    let isUser;
 
     if (accountInfo === null) {
       isUser = true;
@@ -423,11 +360,7 @@ async function isUserWallet(address) {
 
       if (executable) {
         isUser = false;
-      } else if (owner === SYSTEM_PROGRAM) {
-        isUser = true;
-      } else {
-        isUser = false;
-      }
+      } else isUser = owner === SYSTEM_PROGRAM;
     }
 
     walletCache.set(address, { isUserWallet: isUser, checkedAt: Date.now() });
@@ -534,12 +467,14 @@ app.get('/api/reward-pool', (req, res) => {
   });
 });
 
-app.get('/api/global-stats', (req, res) => {
+app.get('/api/global-stats', async (req, res) => {
+  const degens = await db.getHallOfDegens();
+
   res.json({
     totalRewardsPaid,
     totalSupplyBurned,
     totalRoundsCompleted,
-    totalUniqueWinners: calculateHallOfDegens().length,
+    totalUniqueWinners: degens.length,
     currentRoundNumber: roundNumber,
     lastUpdated: Date.now(),
   });
@@ -547,10 +482,21 @@ app.get('/api/global-stats', (req, res) => {
 
 app.get('/api/hall-of-degens', async (req, res) => {
   const limit = parseInt(req.query.limit) || 50;
-  const winners = await db.getAllWinners();
+  const degens = await db.getHallOfDegens();
 
   res.json({
-    winners: winners.slice(0, limit).map(w => ({
+    degens: degens.slice(0, limit),
+    total: degens.length,
+    totalRewardsPaid,
+  });
+});
+
+app.get('/api/winners', async (req, res) => {
+  const limit = parseInt(req.query.limit) || 50;
+  const winners = await db.getWinnerHistory(limit);
+
+  res.json({
+    winners: winners.map(w => ({
       wallet: w.wallet,
       volume: parseFloat(w.volume),
       reward: parseFloat(w.reward),
@@ -560,17 +506,6 @@ app.get('/api/hall-of-degens', async (req, res) => {
       timestamp: parseInt(w.timestamp),
     })),
     total: winners.length,
-    totalRewardsPaid,
-  });
-});
-
-app.get('/api/winners', (req, res) => {
-  const limit = parseInt(req.query.limit) || 50;
-  const winners = winnerHistory.slice(-limit).reverse();
-
-  res.json({
-    winners,
-    total: winnerHistory.length,
     totalRewardsPaid,
   });
 });
@@ -631,7 +566,6 @@ app.post('/api/admin/track-fee', (req, res) => {
   });
 });
 
-// UPDATE: /api/admin/update-signature
 app.post('/api/admin/update-signature', async (req, res) => {
   const { adminKey, wallet, roundStart, signature } = req.body;
 
@@ -771,7 +705,7 @@ async function processTransaction(tx) {
     return { processed: 0, excluded: 0 };
   }
 
-  console.log(`✓ Transaction involves our token`);
+  console.log(`✔ Transaction involves our token`);
 
   let solValue = 0;
   let traderWallet = feePayer;

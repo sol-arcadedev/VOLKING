@@ -166,6 +166,14 @@ export async function getAllWinners() {
     }
 }
 
+export async function getWinnerHistory(limit = 50) {
+    const result = await pool.query(
+        'SELECT * FROM round_winners ORDER BY timestamp DESC LIMIT $1',
+        [limit]
+    );
+    return result.rows;
+}
+
 // ============================================
 // HALL OF DEGENS (Aggregated Stats)
 // ============================================
