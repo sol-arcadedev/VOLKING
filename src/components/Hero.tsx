@@ -67,7 +67,7 @@ export const Hero: React.FC = () => {
                 What is VOLKING?
               </h3>
               <p className="text-retro-white font-body text-base leading-relaxed mb-4">
-                VOLKING is the ultimate volume-based reward token! Every 15 minutes, the trader who generates the <span className="text-candle-green font-bold">highest buy volume</span> becomes the VOLKING and claims the prize pool. It's simple: trade big, trade smart, and claim your throne. No luck, no random draws — just pure trading skill and volume dominance!
+                VOLKING is the ultimate volume-based reward token! Every 15 minutes, the trader who generates the <span className="text-candle-green font-bold">highest volume</span> becomes the VOLKING and claims the prize pool. It's simple: trade big, trade smart, and claim your throne. No luck, no random draws — just pure trading skill and volume dominance!
               </p>
             </div>
 
