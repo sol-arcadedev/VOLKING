@@ -18,7 +18,7 @@ const useCountdown = (): CountdownData => {
     useEffect(() => {
         const calculateTimeRemaining = () => {
             const now = Date.now();
-            const roundDuration = 15 * 60 * 1000; // 15 minutes in ms
+            const roundDuration = 5 * 60 * 1000; // 15 minutes in ms
             const currentRoundStart = now - (now % roundDuration);
             const nextRoundStart = currentRoundStart + roundDuration;
             const timeRemaining = nextRoundStart - now;

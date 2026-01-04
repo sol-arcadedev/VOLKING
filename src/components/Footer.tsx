@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Twitter, Send, Github, ExternalLink } from 'lucide-react';
+import { Twitter, Github, ExternalLink } from 'lucide-react';
 import { TOKEN_CONFIG, NAVIGATION_LINKS, SOCIAL_LINKS } from '../constants';
 
 export const Footer: React.FC = () => {
@@ -36,7 +36,6 @@ export const Footer: React.FC = () => {
               </p>
               <div className="flex space-x-4">
                 <SocialLink href={SOCIAL_LINKS.twitter} icon={Twitter} label="Twitter" />
-                <SocialLink href={SOCIAL_LINKS.telegram} icon={Send} label="Telegram" />
                 <SocialLink href={SOCIAL_LINKS.github} icon={Github} label="GitHub" />
               </div>
             </div>

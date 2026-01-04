@@ -42,9 +42,35 @@ export const Hero: React.FC = () => {
               TRADE. COMPETE. WIN.
             </p>
 
-            <p className="text-xl font-body text-candle-green-dark mb-12">
+            <p className="text-xl font-body text-candle-green-dark mb-8">
               &gt; EVERY 15 MINUTES = NEW KING
             </p>
+
+            {/* What is VOLKING Explanation */}
+            <div className="pixel-box p-6 mb-8 max-w-3xl mx-auto">
+              <h3 className="text-xl font-display text-candle-green mb-4 uppercase">
+                ⚔️ What is VOLKING? ⚔️
+              </h3>
+              <p className="text-retro-white font-body text-base leading-relaxed mb-4">
+                VOLKING is the ultimate volume battle arena! Every 15 minutes, the trader who generates the <span className="text-candle-green font-bold">highest buy volume</span> becomes the VOLKING and claims the prize pool. It's simple: trade big, trade smart, and claim your throne. No luck, no random draws — just pure trading skill and volume dominance!
+              </p>
+              <p className="text-candle-green-dark font-body text-sm">
+                🏆 Biggest buyer wins • 💰 Prizes every round • 👑 Become the King
+              </p>
+            </div>
+
+            {/* Community & Version Notice */}
+            <div className="pixel-box p-5 mb-12 max-w-3xl mx-auto border-candle-green-dark">
+              <p className="text-retro-white font-body text-sm leading-relaxed mb-3">
+                <span className="text-candle-green font-bold">🚀 VERSION 1.0 — LAUNCH EDITION</span>
+              </p>
+              <p className="text-retro-white font-body text-sm leading-relaxed mb-3">
+                This is the first version of VOLKING! We're starting with <span className="text-candle-green">1 winner every 15 minutes</span>, but this is just the beginning.
+              </p>
+              <p className="text-retro-white font-body text-sm leading-relaxed">
+                We'd love to hear from YOU! Got ideas for new volume-based competitions? Want 24-hour rounds with multiple winners? Different prize structures? <span className="text-candle-green">The community decides the future of VOLKING.</span> Drop your suggestions and let's build this together! 💬
+              </p>
+            </div>
 
             {/* Mini Candlestick Chart */}
             <div className="flex justify-center items-end space-x-2 mb-12 h-24">

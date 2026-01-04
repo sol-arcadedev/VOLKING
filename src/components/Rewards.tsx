@@ -75,7 +75,7 @@ export const Rewards: React.FC = () => {
     if (amount >= 1000) {
       return `${(amount / 1000).toFixed(2)}K`;
     }
-    return amount.toFixed(4);
+    return amount.toFixed(2);
   };
 
   return (
@@ -97,7 +97,7 @@ export const Rewards: React.FC = () => {
               </h2>
             </div>
             <p className="text-2xl text-retro-white font-body max-w-3xl mx-auto">
-              Creator fees go directly to <span className="text-candle-green">volume leaders</span>. Trade more, earn more.
+              15% of Creator fees go directly to <span className="text-candle-green">volume leaders</span>. Trade more, earn more.
             </p>
           </motion.div>
 
@@ -248,18 +248,6 @@ export const Rewards: React.FC = () => {
                   </motion.div>
               ))}
             </div>
-          </motion.div>
-
-          {/* Note */}
-          <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="mt-10 pixel-box bg-pepe-green p-6"
-          >
-            <p className="text-black font-display text-base text-center">
-              💡 Always 0.02 SOL reserved for transaction fees • All rewards verifiable on-chain
-            </p>
           </motion.div>
         </div>
       </section>

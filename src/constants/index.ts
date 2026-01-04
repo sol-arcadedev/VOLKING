@@ -21,10 +21,9 @@ export const TOKEN_CONFIG = {
 };
 
 export const SOCIAL_LINKS = {
-  twitter: 'https://twitter.com/volking_token',
-  telegram: 'https://t.me/volking',
-  github: 'https://github.com/volking-token',
-  pumpfun: 'https://pump.fun',
+  twitter: 'https://x.com/i/communities/2007378539306230204',
+  github: 'https://github.com/sol-arcadedev/VOLKING',
+  pumpfun: 'https://pump.fun/coin/ToBeAdded',
 };
 
 export const NAVIGATION_LINKS = [
