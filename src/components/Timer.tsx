@@ -45,7 +45,7 @@ const useCountdown = (): CountdownData => {
             } catch (error) {
                 // Fallback if API fails
                 const now = Date.now();
-                const roundDuration = 15 * 60 * 1000;
+                const roundDuration = 3 * 60 * 1000;
                 const currentRoundStart = now - (now % roundDuration);
                 const nextRoundStart = currentRoundStart + roundDuration;
                 const timeRemaining = nextRoundStart - now;

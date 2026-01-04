@@ -190,11 +190,18 @@ async function getWalletBalance(walletAddress) {
 
 /**
  * Transfer SOL from one wallet to another
+ * FIXED: Now properly validates and only returns success if transaction is confirmed
  */
 async function transferSOL(fromKeypair, toAddress, amountSOL) {
+  if (!fromKeypair || !toAddress || amountSOL <= 0) {
+    throw new Error('Invalid transfer parameters');
+  }
+
   try {
     const toPubkey = new PublicKey(toAddress);
     const lamports = Math.floor(amountSOL * LAMPORTS_PER_SOL);
+
+    console.log(`   💸 Initiating transfer: ${amountSOL.toFixed(4)} SOL to ${toAddress.substring(0, 8)}...`);
 
     const transaction = new Transaction().add(
         SystemProgram.transfer({
@@ -211,12 +218,12 @@ async function transferSOL(fromKeypair, toAddress, amountSOL) {
         { commitment: 'confirmed' }
     );
 
-    console.log(`✅ Transfer successful: ${amountSOL.toFixed(4)} SOL to ${toAddress.substring(0, 8)}...`);
-    console.log(`   Signature: ${signature}`);
+    console.log(`   ✅ Transfer confirmed: ${amountSOL.toFixed(4)} SOL to ${toAddress.substring(0, 8)}...`);
+    console.log(`   📝 Signature: ${signature}`);
 
     return signature;
   } catch (error) {
-    console.error(`❌ Transfer failed:`, error);
+    console.error(`   ❌ Transfer failed to ${toAddress.substring(0, 8)}...:`, error.message);
     throw error;
   }
 }
@@ -283,6 +290,7 @@ async function claimCreatorFeesViaPumpPortal() {
     await connection.confirmTransaction(signature, 'confirmed');
 
     console.log(`   ✅ Fee claim transaction: https://solscan.io/tx/${signature}`);
+    console.log(`   📝 Signature: ${signature}`);
 
     // Wait a moment for balance to update
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -341,13 +349,10 @@ function stopFeeClaimingInterval() {
   }
 }
 
-// ============================================
-// CONTINUATION FROM PART 1
-// ============================================
-
 /**
  * Distribute fees to treasury, reward wallet, and buyback
  * 70% to treasury, 5% to reward wallet (next round base), 10% stays for buyback
+ * FIXED: Now properly validates all transfers and returns null if any critical transfer fails
  */
 async function distributeFees(totalFees) {
   if (totalFees <= 0) {
@@ -363,6 +368,7 @@ async function distributeFees(totalFees) {
     buybackBurn: Math.max(0, (totalFees * BUYBACK_BURN_PERCENTAGE) - MIN_SOL_FOR_FEES),
     winnerAmount: totalFees * WINNER_REWARD_PERCENTAGE, // For tracking only
     signatures: {},
+    success: false,
   };
 
   console.log(`   Treasury (70%): ${distribution.treasury.toFixed(4)} SOL`);
@@ -373,29 +379,54 @@ async function distributeFees(totalFees) {
   const creatorKeypair = getKeypairFromPrivateKey(CREATOR_FEE_WALLET_PRIVATE);
 
   if (!creatorKeypair) {
-    console.log('⚠️ Creator fee wallet keypair not configured - simulating distribution');
+    console.log('❌ Creator fee wallet keypair not configured - CANNOT distribute fees');
+    distribution.error = 'Creator fee wallet keypair not configured';
+    return distribution;
+  }
+
+  if (!TREASURY_WALLET) {
+    console.log('❌ Treasury wallet not configured - CANNOT distribute fees');
+    distribution.error = 'Treasury wallet not configured';
+    return distribution;
+  }
+
+  if (!REWARD_WALLET_PUBLIC) {
+    console.log('❌ Reward wallet not configured - CANNOT distribute fees');
+    distribution.error = 'Reward wallet not configured';
     return distribution;
   }
 
   try {
     // Transfer to Treasury
-    if (TREASURY_WALLET && distribution.treasury > 0.001) {
+    if (distribution.treasury > 0.001) {
       console.log(`\n   Transferring ${distribution.treasury.toFixed(4)} SOL to Treasury...`);
       distribution.signatures.treasury = await transferSOL(
           creatorKeypair,
           TREASURY_WALLET,
           distribution.treasury
       );
+
+      if (!distribution.signatures.treasury) {
+        throw new Error('Treasury transfer failed - no signature returned');
+      }
+    } else {
+      console.log('⚠️ Treasury amount too small to transfer');
     }
 
     // Transfer to Reward Wallet (next round base)
-    if (REWARD_WALLET_PUBLIC && distribution.nextRoundBase > 0.001) {
+    if (distribution.nextRoundBase > 0.001) {
       console.log(`\n   Transferring ${distribution.nextRoundBase.toFixed(4)} SOL to Reward Wallet (next round base)...`);
       distribution.signatures.rewardWallet = await transferSOL(
           creatorKeypair,
           REWARD_WALLET_PUBLIC,
           distribution.nextRoundBase
       );
+
+      if (!distribution.signatures.rewardWallet) {
+        throw new Error('Reward wallet transfer failed - no signature returned');
+      }
+    } else {
+      console.log('⚠️ Reward wallet amount too small to transfer');
     }
 
     // Buyback amount stays in creator fee wallet for the buyback & burn operation
@@ -403,17 +434,23 @@ async function distributeFees(totalFees) {
       console.log(`\n   💰 ${distribution.buybackBurn.toFixed(4)} SOL reserved for Buyback & Burn (stays in creator fee wallet)`);
     }
 
+    distribution.success = true;
     console.log('\n✅ Fee distribution complete!');
+    console.log(`   📝 Treasury signature: ${distribution.signatures.treasury}`);
+    console.log(`   📝 Reward wallet signature: ${distribution.signatures.rewardWallet}`);
+
     return distribution;
   } catch (error) {
-    console.error('❌ Error during fee distribution:', error);
+    console.error('❌ Error during fee distribution:', error.message);
     distribution.error = error.message;
+    distribution.success = false;
     return distribution;
   }
 }
 
 /**
  * Execute buyback and burn
+ * FIXED: Now properly logs all signatures and validates transactions
  */
 async function executeBuybackAndBurn(amountSOL) {
   if (!ENABLE_BUYBACK_BURN) {
@@ -431,13 +468,12 @@ async function executeBuybackAndBurn(amountSOL) {
   const creatorFeeKeypair = getKeypairFromPrivateKey(CREATOR_FEE_WALLET_PRIVATE);
 
   if (!creatorFeeKeypair) {
-    console.log('⚠️ Creator fee wallet keypair not configured - simulating burn');
-    const estimatedTokens = amountSOL * 1000000;
-    return { success: true, tokensBurned: estimatedTokens, simulated: true };
+    console.log('❌ Creator fee wallet keypair not configured - CANNOT execute buyback');
+    return { success: false, tokensBurned: 0, error: 'Creator fee wallet keypair not configured' };
   }
 
   if (!TOKEN_ADDRESS) {
-    console.log('⚠️ TOKEN_ADDRESS not configured');
+    console.log('❌ TOKEN_ADDRESS not configured');
     return { success: false, tokensBurned: 0, error: 'TOKEN_ADDRESS not configured' };
   }
 
@@ -500,6 +536,7 @@ async function executeBuybackAndBurn(amountSOL) {
     }
 
     console.log(`   ✅ Swap complete: ${swapSignature}`);
+    console.log(`   📝 Swap signature: ${swapSignature}`);
 
     // Get token balance
     console.log('   💰 Checking token balance...');
@@ -560,6 +597,7 @@ async function executeBuybackAndBurn(amountSOL) {
     totalSupplyBurned += tokensBurned;
 
     console.log(`   ✅ Burn complete: ${burnSignature}`);
+    console.log(`   📝 Burn signature: ${burnSignature}`);
     console.log(`   🔥 Burned ${tokensBurned.toLocaleString()} tokens`);
     console.log(`   📊 Total supply burned all-time: ${totalSupplyBurned.toLocaleString()}`);
 
@@ -576,6 +614,7 @@ async function executeBuybackAndBurn(amountSOL) {
 
     if (swapSignature && !burnSignature) {
       console.log('   ⚠️ Swap succeeded but burn failed - tokens may need manual burning');
+      console.log(`   📝 Swap signature: ${swapSignature}`);
       return {
         success: false,
         tokensBurned: 0,
@@ -591,16 +630,17 @@ async function executeBuybackAndBurn(amountSOL) {
 
 /**
  * Send reward to the round winner
+ * FIXED: Now properly validates transfer and only returns success with real signature
  */
 async function sendRewardToWinner(winnerAddress, amount) {
   if (!ENABLE_REWARD_DISTRIBUTION) {
     console.log('⚠️ Reward distribution disabled');
-    return { success: false, signature: null };
+    return { success: false, signature: null, error: 'Reward distribution disabled' };
   }
 
   if (amount < 0.001) {
     console.log('⚠️ Reward amount too small');
-    return { success: false, signature: null };
+    return { success: false, signature: null, error: 'Reward amount too small' };
   }
 
   console.log(`\n🏆 Sending ${amount.toFixed(4)} SOL reward to winner ${winnerAddress.substring(0, 8)}...`);
@@ -608,16 +648,23 @@ async function sendRewardToWinner(winnerAddress, amount) {
   const rewardKeypair = getKeypairFromPrivateKey(REWARD_WALLET_PRIVATE);
 
   if (!rewardKeypair) {
-    console.log('⚠️ Reward wallet keypair not configured - simulating reward');
-    return { success: true, signature: `simulated-${Date.now()}`, simulated: true };
+    console.log('❌ Reward wallet keypair not configured - CANNOT send reward');
+    return { success: false, signature: null, error: 'Reward wallet keypair not configured' };
   }
 
   try {
     const signature = await transferSOL(rewardKeypair, winnerAddress, amount);
-    console.log(`   ✅ Reward sent! Signature: ${signature}`);
+
+    if (!signature) {
+      throw new Error('Transfer failed - no signature returned');
+    }
+
+    console.log(`   ✅ Reward sent successfully!`);
+    console.log(`   📝 Signature: ${signature}`);
+
     return { success: true, signature };
   } catch (error) {
-    console.error('❌ Error sending reward:', error);
+    console.error('❌ Error sending reward:', error.message);
     return { success: false, signature: null, error: error.message };
   }
 }
@@ -785,33 +832,72 @@ async function handleRoundEnd() {
   if (ENABLE_FEE_COLLECTION && claimedCreatorFees > 0) {
     console.log('\n📤 Distributing fees...');
     distribution = await distributeFees(claimedCreatorFees);
+
+    if (!distribution || !distribution.success) {
+      console.log('❌ Fee distribution failed - round cannot complete properly');
+      console.log('   Reason:', distribution?.error || 'Unknown error');
+    }
   }
 
   // Step 2: Send reward to winner
-  let rewardSignature = `pending-${roundNumber}-${winner.wallet.substring(0, 8)}-${Date.now()}`;
+  let rewardSignature = null;
 
   if (ENABLE_REWARD_DISTRIBUTION && winnerReward >= 0.001) {
     console.log('\n💸 Sending reward to winner...');
     const rewardResult = await sendRewardToWinner(winner.wallet, winnerReward);
 
-    if (rewardResult.success && rewardResult.signature && !rewardResult.simulated) {
+    if (rewardResult.success && rewardResult.signature) {
       rewardSignature = rewardResult.signature;
-      console.log(`   ✅ Reward sent! Transaction: ${rewardSignature}`);
+      console.log(`   ✅ Reward sent on-chain!`);
+      console.log(`   📝 Transaction: ${rewardSignature}`);
     } else {
-      console.log(`   ⚠️ Reward not sent on-chain. Reason: ${rewardResult.error || 'Unknown'}`);
+      console.log(`   ❌ Reward NOT sent on-chain!`);
+      console.log(`   Reason: ${rewardResult.error || 'Unknown error'}`);
+      // Don't set a fake signature - leave it null
     }
   }
 
-  // Wait for transaction to confirm
-  if (rewardSignature && !rewardSignature.startsWith('pending') && !rewardSignature.startsWith('simulated')) {
-    console.log('\n⏳ Waiting for reward transaction to confirm...');
-    await new Promise(resolve => setTimeout(resolve, 3000));
+  // If no signature, we cannot proceed with recording the winner
+  if (!rewardSignature) {
+    console.log('\n❌ Cannot record winner without valid reward signature');
+    console.log('   Please manually send reward and update database');
+
+    // Still update state for next round
+    baseReward = fivePercentOfFees;
+    totalRoundsCompleted++;
+    roundNumber++;
+
+    await db.updateGlobalStats({
+      totalRoundsCompleted,
+      totalRewardsPaid,
+      totalSupplyBurned,
+      currentRoundNumber: roundNumber,
+      rewardWalletBalance: baseReward,
+      startReward: baseReward,
+    });
+
+    resetForNewRound(true);
+    roundInProgress = true;
+    startFeeClaimingInterval();
+
+    return {
+      error: 'Reward not sent',
+      winner: winner.wallet,
+      winnerVolume: winner.volume,
+      winnerReward,
+      distribution,
+      nextBaseReward: baseReward,
+    };
   }
+
+  // Wait for transaction to confirm
+  console.log('\n⏳ Waiting for reward transaction to confirm...');
+  await new Promise(resolve => setTimeout(resolve, 3000));
 
   // Step 3: Execute buyback & burn
   let burnResult = { success: false, tokensBurned: 0 };
 
-  if (ENABLE_BUYBACK_BURN && distribution && distribution.buybackBurn > 0) {
+  if (ENABLE_BUYBACK_BURN && distribution && distribution.success && distribution.buybackBurn > 0) {
     console.log('\n🔥 Executing buyback & burn...');
     burnResult = await executeBuybackAndBurn(distribution.buybackBurn);
 
@@ -819,8 +905,16 @@ async function handleRoundEnd() {
       await recordBurn(
           distribution.buybackBurn,
           burnResult.tokensBurned,
-          burnResult.burnSignature || burnResult.swapSignature || 'auto-burn'
+          burnResult.burnSignature || burnResult.swapSignature
       );
+
+      console.log(`   ✅ Buyback & burn complete!`);
+      console.log(`   📝 Swap signature: ${burnResult.swapSignature}`);
+      if (burnResult.burnSignature) {
+        console.log(`   📝 Burn signature: ${burnResult.burnSignature}`);
+      }
+    } else {
+      console.log(`   ❌ Buyback & burn failed: ${burnResult.error || 'Unknown error'}`);
     }
   }
 
@@ -828,7 +922,7 @@ async function handleRoundEnd() {
   await recordWinner(winner.wallet, winner.volume, winnerReward, rewardSignature, roundStartTime);
 
   // Step 5: Update state for next round
-  baseReward = fivePercentOfFees; // Next round's base is 5% of this round's fees
+  baseReward = fivePercentOfFees;
   totalRoundsCompleted++;
 
   await db.updateGlobalStats({
@@ -844,6 +938,7 @@ async function handleRoundEnd() {
 
   console.log(`\n✅ Round ${roundNumber - 1} complete!`);
   console.log(`   Winner reward sent: ${winnerReward.toFixed(4)} SOL`);
+  console.log(`   📝 Reward signature: ${rewardSignature}`);
   console.log(`   Next round base reward: ${baseReward.toFixed(4)} SOL`);
   if (burnResult.success) {
     console.log(`   Tokens burned: ${burnResult.tokensBurned.toLocaleString()}`);
@@ -875,9 +970,6 @@ function resetForNewRound(clearVolume = true) {
   stats.totalSolVolume = 0;
   stats.feesClaimedCount = 0;
 }
-// ============================================
-// CONTINUATION FROM PART 2 - API ENDPOINTS
-// ============================================
 
 // ============================================
 // WALLET DETECTION
@@ -1008,42 +1100,23 @@ app.get('/api/leaderboard', (req, res) => {
   });
 });
 
-/**
- * Reward Pool endpoint
- * Returns the current reward calculation based on claimed fees
- */
 app.get('/api/reward-pool', (req, res) => {
   const fifteenPercentOfFees = claimedCreatorFees * WINNER_REWARD_PERCENTAGE;
   const fivePercentOfFees = claimedCreatorFees * NEXT_ROUND_BASE_PERCENTAGE;
   const totalCurrentReward = baseReward + fifteenPercentOfFees;
 
   res.json({
-    // Claimed creator fees tracked every minute
     claimedCreatorFees,
-
-    // 15% of claimed fees (winner's portion)
     fifteenPercentOfFees,
-
-    // 5% of claimed fees (next round base)
     fivePercentOfFees,
-
-    // Base reward from previous round
     baseReward,
-
-    // TOTAL CURRENT REWARD = baseReward + 15% of claimed fees
     currentRewardPool: totalCurrentReward,
-
-    // Historical stats
     totalRewardsPaid,
     totalSupplyBurned,
-
-    // Round info
     roundStart: currentRoundStart,
     nextRoundStart: getNextRoundStart(),
     roundNumber,
     roundInProgress,
-
-    // Distribution percentages
     treasuryPercentage: TREASURY_PERCENTAGE,
     rewardWalletPercentage: NEXT_ROUND_BASE_PERCENTAGE,
     buybackPercentage: BUYBACK_BURN_PERCENTAGE,
