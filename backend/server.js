@@ -5,6 +5,175 @@ import * as db from './services/database.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+
+// ============================================
+// FEATURE SWITCHES - SET VIA ENVIRONMENT VARIABLES
+// ============================================
+
+const ENABLE_FEE_COLLECTION = process.env.ENABLE_FEE_COLLECTION !== 'false'; // Default: enabled
+const ENABLE_REWARD_DISTRIBUTION = process.env.ENABLE_REWARD_DISTRIBUTION !== 'false'; // Default: enabled
+const ENABLE_BUYBACK_BURN = process.env.ENABLE_BUYBACK_BURN !== 'false'; // Default: enabled
+
+console.log('\n⚙️  FEATURE SWITCHES:');
+console.log(`   Fee Collection: ${ENABLE_FEE_COLLECTION ? '✅ ENABLED' : '❌ DISABLED'}`);
+console.log(`   Reward Distribution: ${ENABLE_REWARD_DISTRIBUTION ? '✅ ENABLED' : '❌ DISABLED'}`);
+console.log(`   Buyback & Burn: ${ENABLE_BUYBACK_BURN ? '✅ ENABLED' : '❌ DISABLED'}`);
+console.log('');
+
+// ============================================
+// UPDATE YOUR handleRoundEnd() FUNCTION
+// ============================================
+
+async function handleRoundEnd() {
+  console.log('\n🎊 ===== ROUND END =====\n');
+  console.log(`Round ${roundNumber} ending...`);
+  console.log(`Creator fees this round: ${currentRoundCreatorFees.toFixed(4)} SOL`);
+
+  const winner = getCurrentWinner();
+
+  if (!winner) {
+    console.log('⚪ No trades this round, no winner');
+
+    totalRoundsCompleted++;
+    roundNumber++;
+
+    await db.updateGlobalStats({
+      totalRoundsCompleted,
+      totalRewardsPaid,
+      totalSupplyBurned,
+      currentRoundNumber: roundNumber,
+      rewardWalletBalance,
+      startReward,
+    });
+
+    resetForNewRound(false);
+    return null;
+  }
+
+  const treasuryAmount = currentRoundCreatorFees * TREASURY_PERCENTAGE;
+  const rewardWalletAdd = currentRoundCreatorFees * REWARD_WALLET_PERCENTAGE;
+  const buybackAmount = Math.max(0, (currentRoundCreatorFees * BUYBACK_BURN_PERCENTAGE) - MIN_SOL_FOR_FEES);
+
+  console.log(`\n📊 Fee Distribution:`);
+  console.log(`   Treasury (70%): ${treasuryAmount.toFixed(4)} SOL`);
+  console.log(`   Reward Wallet (20%): ${rewardWalletAdd.toFixed(4)} SOL`);
+  console.log(`   Buyback & Burn (10% - fees): ${buybackAmount.toFixed(4)} SOL`);
+
+  // ============================================
+  // FEATURE SWITCH: FEE COLLECTION
+  // ============================================
+  if (ENABLE_FEE_COLLECTION) {
+    console.log('\n💰 Collecting fees from creator wallet...');
+    // TODO: Add actual on-chain fee collection here
+    // This would call your feeManagementService or similar
+    console.log('   ⚠️  Fee collection logic not yet implemented');
+  } else {
+    console.log('\n⏭️  Fee collection DISABLED (simulation only)');
+  }
+
+  rewardWalletBalance += rewardWalletAdd;
+
+  const winnerReward = rewardWalletBalance * WINNER_REWARD_PERCENTAGE;
+  const nextStartReward = rewardWalletBalance * START_REWARD_PERCENTAGE;
+
+  console.log(`\n🏆 Winner Distribution:`);
+  console.log(`   Winner: ${winner.wallet.substring(0, 8)}...`);
+  console.log(`   Volume: ${winner.volume.toFixed(4)} SOL`);
+  console.log(`   Reward (15%): ${winnerReward.toFixed(4)} SOL`);
+  console.log(`   Next Start Reward (5%): ${nextStartReward.toFixed(4)} SOL`);
+
+  // ============================================
+  // FEATURE SWITCH: REWARD DISTRIBUTION
+  // ============================================
+  let rewardSignature = `simulated-${roundNumber}-${winner.wallet.substring(0, 8)}-${Date.now()}`;
+
+  if (ENABLE_REWARD_DISTRIBUTION) {
+    console.log('\n💎 Sending reward to winner...');
+    // TODO: Add actual on-chain reward distribution here
+    // This would call your feeManagementService or similar
+    console.log('   ⚠️  Reward distribution logic not yet implemented');
+  } else {
+    console.log('\n⏭️  Reward distribution DISABLED (simulation only)');
+  }
+
+  // Save to database (always happens, even in simulation mode)
+  await db.saveWinner({
+    wallet: winner.wallet,
+    volume: winner.volume,
+    reward: winnerReward,
+    signature: rewardSignature,
+    roundNumber,
+    roundStart: currentRoundStart,
+    timestamp: Date.now(),
+  });
+
+  await db.saveRewardTransfer({
+    wallet: winner.wallet,
+    amount: winnerReward,
+    signature: rewardSignature,
+    roundNumber,
+    roundStart: currentRoundStart,
+    timestamp: Date.now(),
+  });
+
+  // Update totals
+  totalRewardsPaid += winnerReward;
+  rewardWalletBalance -= winnerReward;
+  rewardWalletBalance -= nextStartReward;
+  startReward = nextStartReward;
+  totalRoundsCompleted++;
+
+  // ============================================
+  // FEATURE SWITCH: BUYBACK & BURN
+  // ============================================
+  if (buybackAmount > 0) {
+    if (ENABLE_BUYBACK_BURN) {
+      console.log('\n🔥 Executing buyback & burn...');
+      // TODO: Add actual on-chain buyback & burn here
+      // This would call your feeManagementService or similar
+      console.log('   ⚠️  Buyback & burn logic not yet implemented');
+    } else {
+      console.log('\n⏭️  Buyback & burn DISABLED (simulation only)');
+    }
+
+    // Save burn record (always happens)
+    await db.saveBurn({
+      amountSOL: buybackAmount,
+      tokensBurned: 0,
+      signature: 'pending-burn',
+      roundNumber,
+      timestamp: Date.now(),
+    });
+  }
+
+  // Save global stats
+  await db.updateGlobalStats({
+    totalRoundsCompleted,
+    totalRewardsPaid,
+    totalSupplyBurned,
+    currentRoundNumber: roundNumber + 1,
+    rewardWalletBalance,
+    startReward,
+  });
+
+  roundNumber++;
+
+  console.log(`\n✅ Round ${roundNumber - 1} complete and saved to database!`);
+  console.log(`   Next round start reward: ${startReward.toFixed(4)} SOL`);
+  console.log(`   Remaining reward wallet: ${rewardWalletBalance.toFixed(4)} SOL\n`);
+
+  resetForNewRound(true);
+
+  return {
+    winner: winner.wallet,
+    winnerVolume: winner.volume,
+    winnerReward,
+    treasuryAmount,
+    buybackAmount,
+    nextStartReward,
+  };
+}
+
 // ============================================
 // CORS CONFIGURATION - FIX FOR CLOUDFLARE PAGES
 // ============================================
@@ -465,6 +634,11 @@ app.get('/api/health', async (req, res) => {
     traders: volumeData.size,
     cacheSize: walletCache.size,
     stats,
+    features: {
+      feeCollection: ENABLE_FEE_COLLECTION,
+      rewardDistribution: ENABLE_REWARD_DISTRIBUTION,
+      buybackBurn: ENABLE_BUYBACK_BURN,
+    },
     config: {
       tokenDecimals: TOKEN_DECIMALS,
       tokenAddress: TOKEN_ADDRESS ? `${TOKEN_ADDRESS.substring(0, 8)}...` : 'not set',
@@ -476,10 +650,6 @@ app.get('/api/health', async (req, res) => {
       treasury: `${TREASURY_PERCENTAGE * 100}%`,
       rewardWallet: `${REWARD_WALLET_PERCENTAGE * 100}%`,
       buybackBurn: `${BUYBACK_BURN_PERCENTAGE * 100}%`,
-    },
-    rewardDistribution: {
-      winnerReward: `${WINNER_REWARD_PERCENTAGE * 100}% of reward wallet`,
-      startReward: `${START_REWARD_PERCENTAGE * 100}% of reward wallet`,
     },
   });
 });
