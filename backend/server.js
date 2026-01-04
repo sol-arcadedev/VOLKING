@@ -36,16 +36,27 @@ console.log('');
 // ============================================
 app.use(cors({
   origin: [
+    // Production domains
+    'https://volking.fun',
+    'https://www.volking.fun',
     'https://volking.pages.dev',
+
+    // Local development
     'http://localhost:5173',
     'http://localhost:3000',
-    /\.pages\.dev$/
+
+    // Allow all Cloudflare Pages preview deployments
+    /\.pages\.dev$/,
+
+    // Allow all subdomains of volking.fun (future-proofing)
+    /\.volking\.fun$/
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// Handle preflight requests
 app.options('*', cors());
 app.use(express.json());
 
@@ -59,7 +70,7 @@ const CREATOR_FEE_WALLET = process.env.CREATOR_FEE_WALLET || '';
 const TREASURY_WALLET = process.env.TREASURY_WALLET || '';
 const REWARD_WALLET_PUBLIC = process.env.REWARD_WALLET_PUBLIC || '';
 const REWARD_WALLET_PRIVATE = process.env.REWARD_WALLET_PRIVATE || '';
-const BUYBACK_WALLET = process.env.BUYBACK_WALLET || '';
+const BUYBACK_WALLET = process.env.CREATOR_FEE_WALLET || '';
 
 // Jupiter API for swaps
 const JUPITER_API = 'https://quote-api.jup.ag/v6';
@@ -337,7 +348,7 @@ async function executeBuybackAndBurn(amountSOL) {
 
   console.log(`\n🔥 Executing Buyback & Burn with ${amountSOL.toFixed(4)} SOL...`);
 
-  const buybackKeypair = getKeypairFromPrivateKey(process.env.BUYBACK_WALLET_PRIVATE);
+  const buybackKeypair = getKeypairFromPrivateKey(process.env.CREATOR_FEE_WALLET_PRIVATE);
 
   if (!buybackKeypair) {
     console.log('⚠️ Buyback wallet keypair not configured - simulating burn');
