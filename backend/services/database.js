@@ -154,18 +154,6 @@ export async function saveWinner(winnerData) {
     }
 }
 
-export async function getAllWinners() {
-    try {
-        const result = await pool.query(
-            'SELECT * FROM round_winners ORDER BY timestamp DESC LIMIT 100'
-        );
-        return result.rows;
-    } catch (error) {
-        console.error('❌ Error fetching winners:', error);
-        return [];
-    }
-}
-
 export async function getWinnerHistory(limit = 50) {
     const result = await pool.query(
         'SELECT * FROM round_winners ORDER BY timestamp DESC LIMIT $1',
@@ -333,19 +321,6 @@ export async function saveRewardTransfer(transferData) {
     } catch (error) {
         console.error('❌ Error saving reward transfer:', error);
         throw error;
-    }
-}
-
-export async function getRewardTransfers(limit = 50) {
-    try {
-        const result = await pool.query(
-            'SELECT * FROM reward_transfers ORDER BY timestamp DESC LIMIT $1',
-            [limit]
-        );
-        return result.rows;
-    } catch (error) {
-        console.error('❌ Error fetching reward transfers:', error);
-        return [];
     }
 }
 
