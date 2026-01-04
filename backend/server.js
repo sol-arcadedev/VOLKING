@@ -769,7 +769,6 @@ async function handleRoundEnd() {
       startReward: baseReward,
     });
 
-
     resetForNewRound(false);
     roundInProgress = true;
     startFeeClaimingInterval();
