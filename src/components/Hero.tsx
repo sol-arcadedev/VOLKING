@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Timer } from './Timer';
-import { TrendingUp, Award, Zap } from 'lucide-react';
+import { TrendingUp, Award, Zap, Github } from 'lucide-react';
 import { FEATURES, SOCIAL_LINKS } from '../constants';
 
 export const Hero: React.FC = () => {
@@ -11,6 +11,21 @@ export const Hero: React.FC = () => {
       <section className="relative min-h-screen flex items-center justify-center pt-20 bg-retro-black">
         <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="text-center">
+
+            {/* GitHub Transparency Link */}
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <a
+                  href="https://github.com/sol-arcadedev/VOLKING"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-retro-white hover:text-candle-green transition-colors"
+              >
+                <Github className="w-6 h-6" />
+              </a>
+              <p className="text-sm font-body text-retro-white">
+                Full transparency if you would like to see the code behind the implementation.
+              </p>
+            </div>
 
             {/* Contract Address */}
             <p className="text-lg font-body text-candle-green mb-8">
