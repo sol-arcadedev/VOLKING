@@ -43,19 +43,12 @@ console.log('');
 // ============================================
 app.use(cors({
   origin: [
-    // Production domains
     'https://volking.fun',
     'https://www.volking.fun',
     'https://volking.pages.dev',
-
-    // Local development
     'http://localhost:5173',
     'http://localhost:3000',
-
-    // Allow all Cloudflare Pages preview deployments
     /\.pages\.dev$/,
-
-    // Allow all subdomains of volking.fun
     /\.volking\.fun$/
   ],
   credentials: true,
@@ -80,7 +73,7 @@ const REWARD_WALLET_PRIVATE = process.env.REWARD_WALLET_PRIVATE || '';
 
 // Jupiter API for swaps
 const JUPITER_API = 'https://quote-api.jup.ag/v6';
-const BURN_ADDRESS = '1nc1nerator11111111111111111111111111111111'; // Standard burn address
+const PUMP_PORTAL_API = 'https://pumpportal.fun/api/trade-local';
 
 const HELIUS_RPC = HELIUS_API_KEY
     ? `https://mainnet.helius-rpc.com/?api-key=${HELIUS_API_KEY}`
@@ -97,13 +90,15 @@ const SOL_DECIMALS = 9;
 // FEE DISTRIBUTION CONSTANTS
 // ============================================
 const TREASURY_PERCENTAGE = 0.70;
-const REWARD_WALLET_PERCENTAGE = 0.20;
-const BUYBACK_BURN_PERCENTAGE = 0.10;
 const WINNER_REWARD_PERCENTAGE = 0.15;
-const START_REWARD_PERCENTAGE = 0.05;
+const NEXT_ROUND_BASE_PERCENTAGE = 0.05;
+const BUYBACK_BURN_PERCENTAGE = 0.10;
 const MIN_SOL_FOR_FEES = 0.02;
-const INITIAL_START_REWARD = 0.2;
+const INITIAL_BASE_REWARD = 0.2;
 const SYSTEM_PROGRAM = '11111111111111111111111111111111';
+
+// Fee claiming interval (1 minute)
+const FEE_CLAIM_INTERVAL = 60 * 1000; // 1 minute in milliseconds
 
 // Cache for wallet checks
 const walletCache = new Map();
@@ -114,21 +109,20 @@ const CACHE_TTL = 15 * 60 * 1000;
 // ============================================
 let volumeData = new Map();
 let currentRoundStart = getCurrentRoundStart();
-let currentRoundCreatorFees = 0;
-let unclaimedCreatorFees = 0; // Track unclaimed fees from pump.fun
-
+let claimedCreatorFees = 0; // Total claimed fees this round (accumulated every minute)
 let roundNumber = 1;
-let rewardWalletBalance = 0;
-let startReward = 0.2;
+let baseReward = INITIAL_BASE_REWARD; // Base reward for current round (from previous round's 5%)
 let totalRewardsPaid = 0;
 let totalSupplyBurned = 0;
 let totalRoundsCompleted = 0;
+let roundInProgress = true;
+let feeClaimInterval = null;
 
 let stats = {
   processed: 0,
   excluded: 0,
   totalSolVolume: 0,
-  creatorFeesTracked: 0
+  feesClaimedCount: 0,
 };
 
 // ============================================
@@ -156,11 +150,11 @@ function getCurrentWinner() {
 
 /**
  * Calculate current reward for Volume King
- * Formula: RewardWalletBalance + (15% of unclaimedCreatorFees)
+ * Formula: baseReward + (15% of claimed creator fees)
  */
 function calculateCurrentReward() {
-  const potentialRewardFromFees = unclaimedCreatorFees * REWARD_WALLET_PERCENTAGE;
-  return rewardWalletBalance + (potentialRewardFromFees * WINNER_REWARD_PERCENTAGE);
+  const fifteenPercentOfFees = claimedCreatorFees * WINNER_REWARD_PERCENTAGE;
+  return baseReward + fifteenPercentOfFees;
 }
 
 /**
@@ -228,33 +222,80 @@ async function transferSOL(fromKeypair, toAddress, amountSOL) {
 }
 
 /**
- * Claim creator fees from Pump.fun
- * Note: This requires the actual Pump.fun claim mechanism
+ * Claim creator fees using PumpPortal API
+ * This will be called every minute during a round
  */
-async function claimCreatorFees() {
-  if (!ENABLE_FEE_COLLECTION) {
-    console.log('⚠️ Fee collection disabled');
+async function claimCreatorFeesViaPumpPortal() {
+  if (!ENABLE_FEE_COLLECTION || !ENABLE_AUTO_CLAIM) {
+    console.log('⚠️ Fee collection or auto-claim disabled');
+    return { success: false, amount: 0 };
+  }
+
+  if (!CREATOR_FEE_WALLET || !CREATOR_FEE_WALLET_PRIVATE) {
+    console.log('⚠️ Creator fee wallet not configured');
     return { success: false, amount: 0 };
   }
 
   try {
-    console.log('\n💰 Claiming creator fees from Pump.fun...');
+    console.log('\n💰 Claiming creator fees via PumpPortal...');
 
-    // Get current balance of creator fee wallet before claim
+    // Get balance before claiming
     const balanceBefore = await getWalletBalance(CREATOR_FEE_WALLET);
-    console.log(`   Creator fee wallet balance: ${balanceBefore.toFixed(4)} SOL`);
 
-    // The actual claim would happen via Pump.fun's claim mechanism
-    // For now, we track the accumulated fees during the round
-    const claimedAmount = currentRoundCreatorFees;
+    // Call PumpPortal API to generate claim transaction
+    const response = await fetch(PUMP_PORTAL_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        publicKey: CREATOR_FEE_WALLET,
+        action: 'collectCreatorFee',
+        priorityFee: 0.000001,
+      })
+    });
 
-    if (claimedAmount <= 0) {
-      console.log('   No fees to claim this round');
-      return { success: true, amount: 0 };
+    if (response.status !== 200) {
+      const errorText = await response.text();
+      console.log(`   ⚠️ PumpPortal API error: ${response.status} - ${errorText}`);
+      return { success: false, amount: 0, error: errorText };
     }
 
-    console.log(`   ✅ Fees claimed: ${claimedAmount.toFixed(4)} SOL`);
-    return { success: true, amount: claimedAmount };
+    // Deserialize and sign the transaction
+    const data = await response.arrayBuffer();
+    const tx = VersionedTransaction.deserialize(new Uint8Array(data));
+
+    const signerKeyPair = getKeypairFromPrivateKey(CREATOR_FEE_WALLET_PRIVATE);
+    if (!signerKeyPair) {
+      throw new Error('Failed to create keypair from private key');
+    }
+
+    tx.sign([signerKeyPair]);
+
+    // Send transaction
+    const signature = await connection.sendTransaction(tx, {
+      skipPreflight: false,
+      preflightCommitment: 'confirmed',
+      maxRetries: 3,
+    });
+
+    // Wait for confirmation
+    await connection.confirmTransaction(signature, 'confirmed');
+
+    console.log(`   ✅ Fee claim transaction: https://solscan.io/tx/${signature}`);
+
+    // Wait a moment for balance to update
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Get balance after claiming
+    const balanceAfter = await getWalletBalance(CREATOR_FEE_WALLET);
+    const claimedAmount = Math.max(0, balanceAfter - balanceBefore);
+
+    console.log(`   💵 Balance before: ${balanceBefore.toFixed(4)} SOL`);
+    console.log(`   💵 Balance after: ${balanceAfter.toFixed(4)} SOL`);
+    console.log(`   💵 Claimed: ${claimedAmount.toFixed(4)} SOL`);
+
+    return { success: true, amount: claimedAmount, signature };
   } catch (error) {
     console.error('❌ Error claiming fees:', error);
     return { success: false, amount: 0, error: error.message };
@@ -262,7 +303,51 @@ async function claimCreatorFees() {
 }
 
 /**
+ * Start claiming fees every minute
+ */
+function startFeeClaimingInterval() {
+  if (feeClaimInterval) {
+    clearInterval(feeClaimInterval);
+  }
+
+  console.log('🔄 Starting fee claiming interval (every 1 minute)');
+
+  feeClaimInterval = setInterval(async () => {
+    if (!roundInProgress) {
+      console.log('⚠️ Round not in progress, skipping fee claim');
+      return;
+    }
+
+    const result = await claimCreatorFeesViaPumpPortal();
+
+    if (result.success && result.amount > 0) {
+      claimedCreatorFees += result.amount;
+      stats.feesClaimedCount++;
+
+      console.log(`📊 Total claimed fees this round: ${claimedCreatorFees.toFixed(4)} SOL`);
+      console.log(`💰 Current reward pool: ${calculateCurrentReward().toFixed(4)} SOL`);
+    }
+  }, FEE_CLAIM_INTERVAL);
+}
+
+/**
+ * Stop fee claiming interval
+ */
+function stopFeeClaimingInterval() {
+  if (feeClaimInterval) {
+    clearInterval(feeClaimInterval);
+    feeClaimInterval = null;
+    console.log('⏸️  Stopped fee claiming interval');
+  }
+}
+
+// ============================================
+// CONTINUATION FROM PART 1
+// ============================================
+
+/**
  * Distribute fees to treasury, reward wallet, and buyback
+ * 70% to treasury, 5% to reward wallet (next round base), 10% stays for buyback
  */
 async function distributeFees(totalFees) {
   if (totalFees <= 0) {
@@ -274,23 +359,21 @@ async function distributeFees(totalFees) {
 
   const distribution = {
     treasury: totalFees * TREASURY_PERCENTAGE,
-    rewardWallet: totalFees * REWARD_WALLET_PERCENTAGE,
+    nextRoundBase: totalFees * NEXT_ROUND_BASE_PERCENTAGE,
     buybackBurn: Math.max(0, (totalFees * BUYBACK_BURN_PERCENTAGE) - MIN_SOL_FOR_FEES),
+    winnerAmount: totalFees * WINNER_REWARD_PERCENTAGE, // For tracking only
     signatures: {},
   };
 
   console.log(`   Treasury (70%): ${distribution.treasury.toFixed(4)} SOL`);
-  console.log(`   Reward Wallet (20%): ${distribution.rewardWallet.toFixed(4)} SOL`);
+  console.log(`   Next Round Base (5%): ${distribution.nextRoundBase.toFixed(4)} SOL`);
+  console.log(`   Winner Amount (15%): ${distribution.winnerAmount.toFixed(4)} SOL`);
   console.log(`   Buyback & Burn (10% - fees): ${distribution.buybackBurn.toFixed(4)} SOL`);
 
-  // Get keypair for creator fee wallet (needs to be funded with claimed fees)
-  // In production, this would be the wallet that received the claimed fees
   const creatorKeypair = getKeypairFromPrivateKey(CREATOR_FEE_WALLET_PRIVATE);
 
   if (!creatorKeypair) {
     console.log('⚠️ Creator fee wallet keypair not configured - simulating distribution');
-    // Simulate the distribution for tracking purposes
-    rewardWalletBalance += distribution.rewardWallet;
     return distribution;
   }
 
@@ -305,19 +388,17 @@ async function distributeFees(totalFees) {
       );
     }
 
-    // Transfer to Reward Wallet
-    if (REWARD_WALLET_PUBLIC && distribution.rewardWallet > 0.001) {
-      console.log(`\n   Transferring ${distribution.rewardWallet.toFixed(4)} SOL to Reward Wallet...`);
+    // Transfer to Reward Wallet (next round base)
+    if (REWARD_WALLET_PUBLIC && distribution.nextRoundBase > 0.001) {
+      console.log(`\n   Transferring ${distribution.nextRoundBase.toFixed(4)} SOL to Reward Wallet (next round base)...`);
       distribution.signatures.rewardWallet = await transferSOL(
           creatorKeypair,
           REWARD_WALLET_PUBLIC,
-          distribution.rewardWallet
+          distribution.nextRoundBase
       );
-      rewardWalletBalance += distribution.rewardWallet;
     }
 
     // Buyback amount stays in creator fee wallet for the buyback & burn operation
-    // No transfer needed - executeBuybackAndBurn will use the creator fee wallet directly
     if (distribution.buybackBurn > 0.001) {
       console.log(`\n   💰 ${distribution.buybackBurn.toFixed(4)} SOL reserved for Buyback & Burn (stays in creator fee wallet)`);
     }
@@ -326,8 +407,6 @@ async function distributeFees(totalFees) {
     return distribution;
   } catch (error) {
     console.error('❌ Error during fee distribution:', error);
-    // Still update reward wallet balance for tracking
-    rewardWalletBalance += distribution.rewardWallet;
     distribution.error = error.message;
     return distribution;
   }
@@ -335,8 +414,6 @@ async function distributeFees(totalFees) {
 
 /**
  * Execute buyback and burn
- * Uses Jupiter to swap SOL for tokens, then burns them using SPL Token burn instruction
- * Uses the CREATOR_FEE_WALLET which already holds the 10% buyback allocation
  */
 async function executeBuybackAndBurn(amountSOL) {
   if (!ENABLE_BUYBACK_BURN) {
@@ -351,12 +428,11 @@ async function executeBuybackAndBurn(amountSOL) {
 
   console.log(`\n🔥 Executing Buyback & Burn with ${amountSOL.toFixed(4)} SOL...`);
 
-  // Use the creator fee wallet for buyback (same wallet that claims fees)
   const creatorFeeKeypair = getKeypairFromPrivateKey(CREATOR_FEE_WALLET_PRIVATE);
 
   if (!creatorFeeKeypair) {
     console.log('⚠️ Creator fee wallet keypair not configured - simulating burn');
-    const estimatedTokens = amountSOL * 1000000; // Placeholder rate
+    const estimatedTokens = amountSOL * 1000000;
     return { success: true, tokensBurned: estimatedTokens, simulated: true };
   }
 
@@ -370,9 +446,7 @@ async function executeBuybackAndBurn(amountSOL) {
   let tokensBurned = 0;
 
   try {
-    // ============================================
-    // STEP 1: GET JUPITER QUOTE
-    // ============================================
+    // Get Jupiter quote
     console.log('   📊 Getting Jupiter quote...');
     const quoteUrl = `${JUPITER_API}/quote?inputMint=So11111111111111111111111111111111111111112&outputMint=${TOKEN_ADDRESS}&amount=${Math.floor(amountSOL * LAMPORTS_PER_SOL)}&slippageBps=100`;
 
@@ -387,9 +461,7 @@ async function executeBuybackAndBurn(amountSOL) {
     const expectedTokensDisplay = expectedTokens / Math.pow(10, TOKEN_DECIMALS);
     console.log(`   Expected tokens: ${expectedTokensDisplay.toLocaleString()}`);
 
-    // ============================================
-    // STEP 2: GET SWAP TRANSACTION FROM JUPITER
-    // ============================================
+    // Get swap transaction
     console.log('   🔄 Building swap transaction...');
     const swapResponse = await fetch(`${JUPITER_API}/swap`, {
       method: 'POST',
@@ -409,26 +481,18 @@ async function executeBuybackAndBurn(amountSOL) {
       throw new Error(`Failed to get swap transaction: ${JSON.stringify(swapData)}`);
     }
 
-    // ============================================
-    // STEP 3: EXECUTE SWAP TRANSACTION
-    // ============================================
+    // Execute swap
     console.log('   ⚡ Executing swap...');
-
-    // Jupiter returns a versioned transaction
     const swapTransactionBuf = Buffer.from(swapData.swapTransaction, 'base64');
     const swapTx = VersionedTransaction.deserialize(swapTransactionBuf);
-
-    // Sign the transaction
     swapTx.sign([creatorFeeKeypair]);
 
-    // Send and confirm
     swapSignature = await connection.sendTransaction(swapTx, {
       skipPreflight: false,
       preflightCommitment: 'confirmed',
       maxRetries: 3,
     });
 
-    // Wait for confirmation
     const swapConfirmation = await connection.confirmTransaction(swapSignature, 'confirmed');
 
     if (swapConfirmation.value.err) {
@@ -437,12 +501,8 @@ async function executeBuybackAndBurn(amountSOL) {
 
     console.log(`   ✅ Swap complete: ${swapSignature}`);
 
-    // ============================================
-    // STEP 4: GET TOKEN BALANCE AFTER SWAP
-    // ============================================
+    // Get token balance
     console.log('   💰 Checking token balance...');
-
-    // Wait a moment for the transaction to be fully processed
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     const tokenMint = new PublicKey(TOKEN_ADDRESS);
@@ -458,7 +518,6 @@ async function executeBuybackAndBurn(amountSOL) {
       console.log(`   Token balance: ${(tokenBalance / Math.pow(10, TOKEN_DECIMALS)).toLocaleString()} tokens`);
     } catch (error) {
       console.log(`   ⚠️ Could not fetch token account: ${error.message}`);
-      // Use expected tokens from quote as fallback
       tokenBalance = expectedTokens;
     }
 
@@ -472,29 +531,24 @@ async function executeBuybackAndBurn(amountSOL) {
       };
     }
 
-    // ============================================
-    // STEP 5: BURN THE TOKENS
-    // ============================================
+    // Burn the tokens
     console.log(`   🔥 Burning ${(tokenBalance / Math.pow(10, TOKEN_DECIMALS)).toLocaleString()} tokens...`);
 
     const burnInstruction = createBurnInstruction(
-        tokenAccountAddress,           // Token account to burn from
-        tokenMint,                      // Token mint
-        creatorFeeKeypair.publicKey,   // Owner of the token account
-        tokenBalance,                   // Amount to burn (in smallest units)
-        [],                            // No multisig
-        TOKEN_PROGRAM_ID               // SPL Token program
+        tokenAccountAddress,
+        tokenMint,
+        creatorFeeKeypair.publicKey,
+        tokenBalance,
+        [],
+        TOKEN_PROGRAM_ID
     );
 
     const burnTransaction = new Transaction().add(burnInstruction);
-
-    // Get recent blockhash
     const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed');
     burnTransaction.recentBlockhash = blockhash;
     burnTransaction.lastValidBlockHeight = lastValidBlockHeight;
     burnTransaction.feePayer = creatorFeeKeypair.publicKey;
 
-    // Sign and send burn transaction
     burnSignature = await sendAndConfirmTransaction(
         connection,
         burnTransaction,
@@ -520,7 +574,6 @@ async function executeBuybackAndBurn(amountSOL) {
   } catch (error) {
     console.error('❌ Buyback & Burn error:', error);
 
-    // If swap succeeded but burn failed, still record partial success
     if (swapSignature && !burnSignature) {
       console.log('   ⚠️ Swap succeeded but burn failed - tokens may need manual burning');
       return {
@@ -628,29 +681,21 @@ async function initializeServer() {
       totalRewardsPaid = parseFloat(globalStats.total_rewards_paid || 0);
       totalSupplyBurned = parseFloat(globalStats.total_supply_burned || 0);
       roundNumber = parseInt(globalStats.current_round_number || 1);
-      rewardWalletBalance = parseFloat(globalStats.reward_wallet_balance || 0);
-      startReward = parseFloat(globalStats.start_reward || 0.2);
+      baseReward = parseFloat(globalStats.start_reward || INITIAL_BASE_REWARD);
 
       console.log('✅ State loaded from database:');
       console.log(`   Rounds completed: ${totalRoundsCompleted}`);
       console.log(`   Total rewards paid: ${totalRewardsPaid.toFixed(4)} SOL`);
       console.log(`   Total supply burned: ${totalSupplyBurned.toLocaleString()}`);
       console.log(`   Current round: ${roundNumber}`);
-      console.log(`   Reward wallet balance: ${rewardWalletBalance.toFixed(4)} SOL`);
-      console.log(`   Start reward: ${startReward.toFixed(4)} SOL`);
-    }
-
-    // Sync reward wallet balance from chain if configured
-    if (REWARD_WALLET_PUBLIC) {
-      const actualBalance = await getWalletBalance(REWARD_WALLET_PUBLIC);
-      if (actualBalance > 0) {
-        console.log(`   On-chain reward wallet balance: ${actualBalance.toFixed(4)} SOL`);
-        // Use on-chain balance as source of truth
-        rewardWalletBalance = actualBalance;
-      }
+      console.log(`   Base reward: ${baseReward.toFixed(4)} SOL`);
     }
 
     console.log('✅ Server initialization complete');
+
+    // Start fee claiming interval
+    startFeeClaimingInterval();
+
   } catch (error) {
     console.error('❌ Server initialization failed:', error);
     process.exit(1);
@@ -664,37 +709,54 @@ async function initializeServer() {
 async function handleRoundEnd() {
   console.log('\n🎊 ===== ROUND END =====\n');
   console.log(`Round ${roundNumber} ending...`);
-  console.log(`Creator fees tracked this round: ${currentRoundCreatorFees.toFixed(4)} SOL`);
+
+  // Stop the round
+  roundInProgress = false;
+  stopFeeClaimingInterval();
+
+  // Wait for trades to be processed (5 seconds)
+  console.log('⏳ Waiting for final trades to be processed...');
+  await new Promise(resolve => setTimeout(resolve, 5000));
+
+  // Claim fees one last time
+  console.log('\n💰 Final fee claim...');
+  const finalClaimResult = await claimCreatorFeesViaPumpPortal();
+  if (finalClaimResult.success && finalClaimResult.amount > 0) {
+    claimedCreatorFees += finalClaimResult.amount;
+    stats.feesClaimedCount++;
+  }
+
+  console.log(`\n📊 Round Summary:`);
+  console.log(`   Total fees claimed: ${claimedCreatorFees.toFixed(4)} SOL`);
+  console.log(`   Base reward: ${baseReward.toFixed(4)} SOL`);
+  console.log(`   Total reward pool: ${calculateCurrentReward().toFixed(4)} SOL`);
 
   const winner = getCurrentWinner();
   const roundStartTime = currentRoundStart;
 
-  // ============================================
-  // STEP 1: CLAIM CREATOR FEES
-  // ============================================
-  let claimResult = { success: false, amount: 0 };
+  // Calculate distributions
+  const fifteenPercentOfFees = claimedCreatorFees * WINNER_REWARD_PERCENTAGE;
+  const fivePercentOfFees = claimedCreatorFees * NEXT_ROUND_BASE_PERCENTAGE;
+  const winnerReward = baseReward + fifteenPercentOfFees;
 
-  if (ENABLE_AUTO_CLAIM && currentRoundCreatorFees > 0) {
-    claimResult = await claimCreatorFees();
-  }
+  console.log(`\n💰 Reward Breakdown:`);
+  console.log(`   Base Reward: ${baseReward.toFixed(4)} SOL`);
+  console.log(`   15% of Fees: ${fifteenPercentOfFees.toFixed(4)} SOL`);
+  console.log(`   TOTAL Winner Reward: ${winnerReward.toFixed(4)} SOL`);
+  console.log(`   Next Round Base (5% of fees): ${fivePercentOfFees.toFixed(4)} SOL`);
 
-  const totalFeesThisRound = claimResult.success ? claimResult.amount : currentRoundCreatorFees;
-
-  // ============================================
-  // STEP 2: DISTRIBUTE FEES
-  // ============================================
-  let distribution = null;
-
-  if (totalFeesThisRound > 0) {
-    distribution = await distributeFees(totalFeesThisRound);
-  }
-
-  // ============================================
-  // STEP 3: HANDLE NO WINNER CASE
-  // ============================================
+  // Handle no winner case
   if (!winner) {
     console.log('⚪ No trades this round, no winner');
 
+    // Distribute fees anyway
+    if (ENABLE_FEE_COLLECTION && claimedCreatorFees > 0) {
+      console.log('\n📤 Distributing fees...');
+      await distributeFees(claimedCreatorFees);
+    }
+
+    // Update base reward for next round
+    baseReward = fivePercentOfFees;
     totalRoundsCompleted++;
     roundNumber++;
 
@@ -703,49 +765,54 @@ async function handleRoundEnd() {
       totalRewardsPaid,
       totalSupplyBurned,
       currentRoundNumber: roundNumber,
-      rewardWalletBalance,
-      startReward,
+      rewardWalletBalance: baseReward,
+      startReward: baseReward,
     });
 
-    // Still execute buyback if we have fees
-    if (distribution && distribution.buybackBurn > 0) {
-      const burnResult = await executeBuybackAndBurn(distribution.buybackBurn);
-      if (burnResult.success && burnResult.tokensBurned > 0) {
-        await recordBurn(distribution.buybackBurn, burnResult.tokensBurned, burnResult.swapSignature || 'auto-burn');
-      }
-    }
-
     resetForNewRound(false);
+    roundInProgress = true;
+    startFeeClaimingInterval();
     return null;
   }
 
-  // ============================================
-  // STEP 4: CALCULATE REWARDS
-  // ============================================
-  const winnerReward = rewardWalletBalance * WINNER_REWARD_PERCENTAGE;
-  const nextStartReward = rewardWalletBalance * START_REWARD_PERCENTAGE;
-
-  console.log(`\n🏆 Winner Distribution:`);
-  console.log(`   Winner: ${winner.wallet.substring(0, 8)}...`);
+  // We have a winner!
+  console.log(`\n🏆 Winner: ${winner.wallet.substring(0, 8)}...`);
   console.log(`   Volume: ${winner.volume.toFixed(4)} SOL`);
-  console.log(`   Reward (15% of ${rewardWalletBalance.toFixed(4)}): ${winnerReward.toFixed(4)} SOL`);
-  console.log(`   Next Start Reward (5%): ${nextStartReward.toFixed(4)} SOL`);
+  console.log(`   Reward: ${winnerReward.toFixed(4)} SOL`);
 
-  // ============================================
-  // STEP 5: SEND REWARD TO WINNER
-  // ============================================
-  const rewardResult = await sendRewardToWinner(winner.wallet, winnerReward);
+  // Step 1: Distribute fees (70% treasury, 5% reward wallet, 10% stays for buyback)
+  let distribution = null;
+  if (ENABLE_FEE_COLLECTION && claimedCreatorFees > 0) {
+    console.log('\n📤 Distributing fees...');
+    distribution = await distributeFees(claimedCreatorFees);
+  }
 
-  const rewardSignature = rewardResult.success
-      ? rewardResult.signature
-      : `round-${roundNumber}-${winner.wallet.substring(0, 8)}-${Date.now()}`;
+  // Step 2: Send reward to winner
+  let rewardSignature = `pending-${roundNumber}-${winner.wallet.substring(0, 8)}-${Date.now()}`;
 
-  // ============================================
-  // STEP 6: EXECUTE BUYBACK & BURN
-  // ============================================
+  if (ENABLE_REWARD_DISTRIBUTION && winnerReward >= 0.001) {
+    console.log('\n💸 Sending reward to winner...');
+    const rewardResult = await sendRewardToWinner(winner.wallet, winnerReward);
+
+    if (rewardResult.success && rewardResult.signature && !rewardResult.simulated) {
+      rewardSignature = rewardResult.signature;
+      console.log(`   ✅ Reward sent! Transaction: ${rewardSignature}`);
+    } else {
+      console.log(`   ⚠️ Reward not sent on-chain. Reason: ${rewardResult.error || 'Unknown'}`);
+    }
+  }
+
+  // Wait for transaction to confirm
+  if (rewardSignature && !rewardSignature.startsWith('pending') && !rewardSignature.startsWith('simulated')) {
+    console.log('\n⏳ Waiting for reward transaction to confirm...');
+    await new Promise(resolve => setTimeout(resolve, 3000));
+  }
+
+  // Step 3: Execute buyback & burn
   let burnResult = { success: false, tokensBurned: 0 };
 
-  if (distribution && distribution.buybackBurn > 0) {
+  if (ENABLE_BUYBACK_BURN && distribution && distribution.buybackBurn > 0) {
+    console.log('\n🔥 Executing buyback & burn...');
     burnResult = await executeBuybackAndBurn(distribution.buybackBurn);
 
     if (burnResult.success && burnResult.tokensBurned > 0) {
@@ -757,14 +824,11 @@ async function handleRoundEnd() {
     }
   }
 
-  // ============================================
-  // STEP 7: UPDATE STATE & DATABASE
-  // ============================================
+  // Step 4: Record winner
   await recordWinner(winner.wallet, winner.volume, winnerReward, rewardSignature, roundStartTime);
 
-  rewardWalletBalance -= winnerReward;
-  rewardWalletBalance -= nextStartReward;
-  startReward = nextStartReward;
+  // Step 5: Update state for next round
+  baseReward = fivePercentOfFees; // Next round's base is 5% of this round's fees
   totalRoundsCompleted++;
 
   await db.updateGlobalStats({
@@ -772,21 +836,24 @@ async function handleRoundEnd() {
     totalRewardsPaid,
     totalSupplyBurned,
     currentRoundNumber: roundNumber + 1,
-    rewardWalletBalance,
-    startReward,
+    rewardWalletBalance: baseReward,
+    startReward: baseReward,
   });
 
   roundNumber++;
 
   console.log(`\n✅ Round ${roundNumber - 1} complete!`);
   console.log(`   Winner reward sent: ${winnerReward.toFixed(4)} SOL`);
-  console.log(`   Next round start reward: ${startReward.toFixed(4)} SOL`);
-  console.log(`   Remaining reward wallet: ${rewardWalletBalance.toFixed(4)} SOL`);
+  console.log(`   Next round base reward: ${baseReward.toFixed(4)} SOL`);
   if (burnResult.success) {
     console.log(`   Tokens burned: ${burnResult.tokensBurned.toLocaleString()}`);
   }
 
   resetForNewRound(true);
+
+  // Start next round
+  roundInProgress = true;
+  startFeeClaimingInterval();
 
   return {
     winner: winner.wallet,
@@ -795,7 +862,7 @@ async function handleRoundEnd() {
     rewardSignature,
     distribution,
     burnResult,
-    nextStartReward,
+    nextBaseReward: baseReward,
   };
 }
 
@@ -803,18 +870,14 @@ function resetForNewRound(clearVolume = true) {
   if (clearVolume) {
     volumeData = new Map();
   }
-  currentRoundCreatorFees = 0;
-  unclaimedCreatorFees = 0;
+  claimedCreatorFees = 0;
   currentRoundStart = getCurrentRoundStart();
   stats.totalSolVolume = 0;
+  stats.feesClaimedCount = 0;
 }
-
-function trackCreatorFee(amount) {
-  currentRoundCreatorFees += amount;
-  unclaimedCreatorFees += amount;
-  stats.creatorFeesTracked++;
-  console.log(`💵 Creator fee tracked: ${amount.toFixed(4)} SOL (Total this round: ${currentRoundCreatorFees.toFixed(4)} SOL)`);
-}
+// ============================================
+// CONTINUATION FROM PART 2 - API ENDPOINTS
+// ============================================
 
 // ============================================
 // WALLET DETECTION
@@ -878,6 +941,7 @@ setInterval(async () => {
   }
 }, 60000);
 
+// Cache cleanup
 setInterval(() => {
   const now = Date.now();
   let cleared = 0;
@@ -889,21 +953,6 @@ setInterval(() => {
   }
   if (cleared > 0) console.log(`🧹 Cleared ${cleared} cache entries`);
 }, 5 * 60 * 1000);
-
-// Periodically sync reward wallet balance from chain
-setInterval(async () => {
-  if (REWARD_WALLET_PUBLIC) {
-    try {
-      const actualBalance = await getWalletBalance(REWARD_WALLET_PUBLIC);
-      if (Math.abs(actualBalance - rewardWalletBalance) > 0.001) {
-        console.log(`📊 Syncing reward wallet balance: ${rewardWalletBalance.toFixed(4)} -> ${actualBalance.toFixed(4)} SOL`);
-        rewardWalletBalance = actualBalance;
-      }
-    } catch (error) {
-      console.error('Error syncing reward wallet balance:', error);
-    }
-  }
-}, 60000); // Every minute
 
 // ============================================
 // API ENDPOINTS
@@ -920,6 +969,7 @@ app.get('/api/health', async (req, res) => {
     roundNumber,
     traders: volumeData.size,
     cacheSize: walletCache.size,
+    roundInProgress,
     stats,
     features: {
       feeCollection: ENABLE_FEE_COLLECTION,
@@ -936,7 +986,8 @@ app.get('/api/health', async (req, res) => {
     },
     feeDistribution: {
       treasury: `${TREASURY_PERCENTAGE * 100}%`,
-      rewardWallet: `${REWARD_WALLET_PERCENTAGE * 100}%`,
+      winnerReward: `${WINNER_REWARD_PERCENTAGE * 100}%`,
+      nextRoundBase: `${NEXT_ROUND_BASE_PERCENTAGE * 100}%`,
       buybackBurn: `${BUYBACK_BURN_PERCENTAGE * 100}%`,
     },
   });
@@ -958,38 +1009,28 @@ app.get('/api/leaderboard', (req, res) => {
 });
 
 /**
- * Reward Pool endpoint with updated formula:
- * Current Reward = RewardWalletBalance + (15% of unclaimedCreatorFees * 20%)
- * This shows what the winner would receive if round ended now
+ * Reward Pool endpoint
+ * Returns the current reward calculation based on claimed fees
  */
 app.get('/api/reward-pool', (req, res) => {
-  // Calculate potential reward wallet addition from current fees
-  const potentialRewardWalletAdd = unclaimedCreatorFees * REWARD_WALLET_PERCENTAGE;
-
-  // Calculate what winner would get (15% of reward wallet + potential addition)
-  const currentPotentialReward = (rewardWalletBalance + potentialRewardWalletAdd) * WINNER_REWARD_PERCENTAGE;
-
-  // Total reward = start reward + winner reward
-  const totalCurrentReward = startReward + currentPotentialReward;
+  const fifteenPercentOfFees = claimedCreatorFees * WINNER_REWARD_PERCENTAGE;
+  const fivePercentOfFees = claimedCreatorFees * NEXT_ROUND_BASE_PERCENTAGE;
+  const totalCurrentReward = baseReward + fifteenPercentOfFees;
 
   res.json({
-    // Current unclaimed fees that will be distributed at round end
-    unclaimedCreatorFees,
-    currentRoundCreatorFees,
+    // Claimed creator fees tracked every minute
+    claimedCreatorFees,
 
-    // What the reward wallet balance is now
-    rewardWalletBalance,
+    // 15% of claimed fees (winner's portion)
+    fifteenPercentOfFees,
 
-    // What 20% of fees would add to reward wallet
-    potentialRewardWalletAdd,
+    // 5% of claimed fees (next round base)
+    fivePercentOfFees,
 
-    // What 15% of total reward wallet would be (winner's cut)
-    winnerRewardPortion: currentPotentialReward,
+    // Base reward from previous round
+    baseReward,
 
-    // Start reward for this round
-    startReward,
-
-    // Total current reward = startReward + 15% of (rewardWallet + 20% of fees)
+    // TOTAL CURRENT REWARD = baseReward + 15% of claimed fees
     currentRewardPool: totalCurrentReward,
 
     // Historical stats
@@ -1000,13 +1041,14 @@ app.get('/api/reward-pool', (req, res) => {
     roundStart: currentRoundStart,
     nextRoundStart: getNextRoundStart(),
     roundNumber,
+    roundInProgress,
 
-    // Distribution percentages for reference
+    // Distribution percentages
     treasuryPercentage: TREASURY_PERCENTAGE,
-    rewardWalletPercentage: REWARD_WALLET_PERCENTAGE,
+    rewardWalletPercentage: NEXT_ROUND_BASE_PERCENTAGE,
     buybackPercentage: BUYBACK_BURN_PERCENTAGE,
     winnerRewardPercentage: WINNER_REWARD_PERCENTAGE,
-    startRewardPercentage: START_REWARD_PERCENTAGE,
+    nextRoundBasePercentage: NEXT_ROUND_BASE_PERCENTAGE,
   });
 });
 
@@ -1019,8 +1061,8 @@ app.get('/api/global-stats', async (req, res) => {
     totalRoundsCompleted,
     totalUniqueWinners: degens.length,
     currentRoundNumber: roundNumber,
-    rewardWalletBalance,
-    startReward,
+    rewardWalletBalance: baseReward,
+    startReward: baseReward,
     lastUpdated: Date.now(),
   });
 });
@@ -1104,21 +1146,27 @@ app.post('/api/admin/end-round', async (req, res) => {
   });
 });
 
-app.post('/api/admin/track-fee', (req, res) => {
-  const { adminKey, amount } = req.body;
+app.post('/api/admin/claim-fees', async (req, res) => {
+  const { adminKey } = req.body;
 
   if (adminKey !== process.env.ADMIN_KEY) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  trackCreatorFee(parseFloat(amount));
+  const result = await claimCreatorFeesViaPumpPortal();
+
+  if (result.success && result.amount > 0) {
+    claimedCreatorFees += result.amount;
+    stats.feesClaimedCount++;
+  }
 
   res.json({
-    success: true,
-    currentRoundCreatorFees,
-    unclaimedCreatorFees,
+    success: result.success,
+    amount: result.amount,
+    signature: result.signature,
+    claimedCreatorFees,
     currentRewardPool: calculateCurrentReward(),
-    startReward,
+    error: result.error,
   });
 });
 
@@ -1158,60 +1206,28 @@ app.post('/api/admin/update-burn', async (req, res) => {
   });
 });
 
-app.post('/api/admin/set-reward-balance', async (req, res) => {
-  const { adminKey, balance } = req.body;
+app.post('/api/admin/set-base-reward', async (req, res) => {
+  const { adminKey, reward } = req.body;
 
   if (adminKey !== process.env.ADMIN_KEY) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  rewardWalletBalance = parseFloat(balance);
+  baseReward = parseFloat(reward);
 
   await db.updateGlobalStats({
     totalRoundsCompleted,
     totalRewardsPaid,
     totalSupplyBurned,
     currentRoundNumber: roundNumber,
-    rewardWalletBalance,
-    startReward,
+    rewardWalletBalance: baseReward,
+    startReward: baseReward,
   });
 
   res.json({
     success: true,
-    rewardWalletBalance,
+    baseReward,
     currentRewardPool: calculateCurrentReward(),
-  });
-});
-
-app.post('/api/admin/sync-balance', async (req, res) => {
-  const { adminKey } = req.body;
-
-  if (adminKey !== process.env.ADMIN_KEY) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-
-  if (!REWARD_WALLET_PUBLIC) {
-    return res.status(400).json({ error: 'Reward wallet not configured' });
-  }
-
-  const actualBalance = await getWalletBalance(REWARD_WALLET_PUBLIC);
-  const previousBalance = rewardWalletBalance;
-  rewardWalletBalance = actualBalance;
-
-  await db.updateGlobalStats({
-    totalRoundsCompleted,
-    totalRewardsPaid,
-    totalSupplyBurned,
-    currentRoundNumber: roundNumber,
-    rewardWalletBalance,
-    startReward,
-  });
-
-  res.json({
-    success: true,
-    previousBalance,
-    newBalance: actualBalance,
-    difference: actualBalance - previousBalance,
   });
 });
 
@@ -1281,10 +1297,6 @@ async function processTransaction(tx) {
     const amount = transfer.amount / Math.pow(10, SOL_DECIMALS);
     const from = transfer.fromUserAccount;
     const to = transfer.toUserAccount;
-
-    if (CREATOR_FEE_WALLET && to === CREATOR_FEE_WALLET) {
-      trackCreatorFee(amount);
-    }
 
     if (amount >= 0.001) {
       const isFromUser = from === feePayer;
@@ -1385,10 +1397,8 @@ app.get('/api/debug/cache', (req, res) => {
     nonUserWallets: walletCache.size - userWallets,
     stats,
     reward: {
-      currentRoundCreatorFees,
-      unclaimedCreatorFees,
-      rewardWalletBalance,
-      startReward,
+      claimedCreatorFees,
+      baseReward,
       currentRewardPool: calculateCurrentReward(),
       totalRewardsPaid,
       totalSupplyBurned,
@@ -1402,31 +1412,34 @@ app.get('/api/debug/cache', (req, res) => {
 
 app.get('/', (req, res) => {
   res.json({
-    message: 'VOLKING API v5 - Automated Volume-Based Rewards',
+    message: 'VOLKING API v6 - Automated Volume-Based Rewards with Minute-by-Minute Fee Claiming',
     volumeUnit: 'SOL',
     feeDistribution: {
       treasury: '70%',
-      rewardWallet: '20%',
+      winnerReward: '15% of claimed fees',
+      nextRoundBase: '5% of claimed fees',
       buybackBurn: '10% (minus 0.02 SOL for tx fees)',
     },
-    rewardDistribution: {
-      winner: '15% of reward wallet balance',
-      nextRoundStartReward: '5% of reward wallet balance',
-      initialStartReward: `${INITIAL_START_REWARD} SOL`,
+    rewardCalculation: {
+      formula: 'Base Reward + (15% of Claimed Fees)',
+      baseReward: 'Reward wallet balance at round start (5% from previous round)',
+      claimedFees: 'Accumulated every 1 minute during round',
     },
     automation: {
-      feeClaiming: ENABLE_AUTO_CLAIM ? 'ENABLED' : 'DISABLED',
+      feeClaiming: ENABLE_AUTO_CLAIM ? 'ENABLED (every 1 minute)' : 'DISABLED',
       feeDistribution: ENABLE_FEE_COLLECTION ? 'ENABLED' : 'DISABLED',
       rewardDistribution: ENABLE_REWARD_DISTRIBUTION ? 'ENABLED' : 'DISABLED',
       buybackBurn: ENABLE_BUYBACK_BURN ? 'ENABLED' : 'DISABLED',
     },
     features: [
-      'Automatic fee claiming at round end',
-      'Automatic fee distribution (70/20/10)',
+      'Automatic fee claiming every 1 minute via PumpPortal',
+      'Real-time reward pool updates',
+      'Automatic fee distribution (70/15/5/10)',
       'Automatic reward to winner',
       'Automatic buyback & burn via Jupiter',
       'Real-time volume tracking via Helius webhooks',
       'Automatic 15-minute round rotation',
+      'Next round starts after all rewards distributed',
     ],
     endpoints: {
       health: 'GET /api/health',
@@ -1440,11 +1453,10 @@ app.get('/', (req, res) => {
     },
     adminEndpoints: {
       endRound: 'POST /api/admin/end-round',
-      trackFee: 'POST /api/admin/track-fee',
+      claimFees: 'POST /api/admin/claim-fees',
       updateSignature: 'POST /api/admin/update-signature',
       updateBurn: 'POST /api/admin/update-burn',
-      setRewardBalance: 'POST /api/admin/set-reward-balance',
-      syncBalance: 'POST /api/admin/sync-balance',
+      setBaseReward: 'POST /api/admin/set-base-reward',
     }
   });
 });
@@ -1457,10 +1469,11 @@ initializeServer().then(() => {
   app.listen(PORT, () => {
     console.log(`\n🚀 VOLKING API running on port ${PORT}`);
     console.log(`📊 Current round: ${roundNumber}`);
-    console.log(`💰 Start reward: ${startReward.toFixed(4)} SOL`);
+    console.log(`💰 Base reward: ${baseReward.toFixed(4)} SOL`);
     console.log(`📈 Total rounds completed: ${totalRoundsCompleted}`);
     console.log(`💎 Total rewards paid: ${totalRewardsPaid.toFixed(4)} SOL`);
     console.log(`🔥 Total supply burned: ${totalSupplyBurned.toLocaleString()}`);
+    console.log(`🔄 Fee claiming: Every 1 minute`);
     console.log('');
   });
 }).catch((error) => {

@@ -3,23 +3,19 @@ import { motion } from 'framer-motion';
 import { RefreshCw, Crown, Wallet, TrendingUp, Flame } from 'lucide-react';
 
 interface RewardPoolData {
-    // Current unclaimed fees that will be distributed at round end
-    unclaimedCreatorFees: number;
-    currentRoundCreatorFees: number;
+    // Claimed creator fees tracked every minute
+    claimedCreatorFees: number;
 
-    // What the reward wallet balance is now
-    rewardWalletBalance: number;
+    // 15% of claimed fees (winner's portion)
+    fifteenPercentOfFees: number;
 
-    // What 20% of fees would add to reward wallet
-    potentialRewardWalletAdd: number;
+    // 5% of claimed fees (next round base)
+    fivePercentOfFees: number;
 
-    // What 15% of total reward wallet would be (winner's cut)
-    winnerRewardPortion: number;
+    // Base reward from previous round (reward wallet balance at round start)
+    baseReward: number;
 
-    // Start reward for this round
-    startReward: number;
-
-    // Total current reward = startReward + 15% of (rewardWallet + 20% of fees)
+    // Total current reward = baseReward + 15% of claimed fees
     currentRewardPool: number;
 
     // Historical stats
@@ -30,13 +26,14 @@ interface RewardPoolData {
     roundStart: number;
     nextRoundStart: number;
     roundNumber: number;
+    roundInProgress: boolean;
 
     // Distribution percentages
     treasuryPercentage: number;
     rewardWalletPercentage: number;
     buybackPercentage: number;
     winnerRewardPercentage: number;
-    startRewardPercentage: number;
+    nextRoundBasePercentage: number;
 }
 
 const formatSOL = (amount: number): string => {
@@ -48,23 +45,22 @@ const formatSOL = (amount: number): string => {
 
 export const RewardPoolDisplay: React.FC = () => {
     const [poolData, setPoolData] = useState<RewardPoolData>({
-        unclaimedCreatorFees: 0,
-        currentRoundCreatorFees: 0,
-        rewardWalletBalance: 0,
-        potentialRewardWalletAdd: 0,
-        winnerRewardPortion: 0,
-        startReward: 0.2,
+        claimedCreatorFees: 0,
+        fifteenPercentOfFees: 0,
+        fivePercentOfFees: 0,
+        baseReward: 0.2,
         currentRewardPool: 0.2,
         totalRewardsPaid: 0,
         totalSupplyBurned: 0,
         roundStart: Date.now(),
         nextRoundStart: Date.now() + 15 * 60 * 1000,
         roundNumber: 1,
+        roundInProgress: true,
         treasuryPercentage: 0.70,
-        rewardWalletPercentage: 0.20,
+        rewardWalletPercentage: 0.05,
         buybackPercentage: 0.10,
         winnerRewardPercentage: 0.15,
-        startRewardPercentage: 0.05,
+        nextRoundBasePercentage: 0.05,
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -94,32 +90,10 @@ export const RewardPoolDisplay: React.FC = () => {
 
     useEffect(() => {
         fetchRewardPool();
-        // Update every 15 seconds as per requirements
+        // Update every 15 seconds
         const interval = setInterval(fetchRewardPool, 15000);
         return () => clearInterval(interval);
     }, []);
-
-    /**
-     * Calculate the current potential reward for the Volume King
-     * Formula: RewardWalletBalance + (15% of (rewardWalletBalance + 20% of unclaimedCreatorFees))
-     *
-     * This shows what the winner would receive if the round ended now:
-     * - The start reward (base amount)
-     * - Plus 15% of the reward wallet (which includes 20% of accumulated fees)
-     */
-    const calculateCurrentReward = (): number => {
-        // 20% of unclaimed fees goes to reward wallet
-        const potentialRewardWalletAdd = poolData.unclaimedCreatorFees * poolData.rewardWalletPercentage;
-
-        // Total reward wallet would be current balance + potential addition
-        const totalRewardWallet = poolData.rewardWalletBalance + potentialRewardWalletAdd;
-
-        // Winner gets 15% of total reward wallet
-        const winnerPortion = totalRewardWallet * poolData.winnerRewardPercentage;
-
-        // Total reward = start reward + winner portion
-        return poolData.startReward + winnerPortion;
-    };
 
     if (loading && poolData.currentRewardPool === 0) {
         return (
@@ -130,10 +104,6 @@ export const RewardPoolDisplay: React.FC = () => {
             </div>
         );
     }
-
-    const currentReward = calculateCurrentReward();
-    const potentialRewardWalletAdd = poolData.unclaimedCreatorFees * poolData.rewardWalletPercentage;
-    const totalRewardWallet = poolData.rewardWalletBalance + potentialRewardWalletAdd;
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -171,17 +141,17 @@ export const RewardPoolDisplay: React.FC = () => {
 
                     {/* Main Reward Amount */}
                     <motion.div
-                        key={currentReward}
+                        key={poolData.currentRewardPool}
                         initial={{ scale: 1.05 }}
                         animate={{ scale: 1 }}
                         transition={{ duration: 0.2 }}
                         className="mb-6"
                     >
                         <div className="text-5xl md:text-6xl font-display text-candle-green text-shadow-retro mb-2 tabular-nums">
-                            {formatSOL(currentReward)} SOL
+                            {formatSOL(poolData.currentRewardPool)} SOL
                         </div>
                         <div className="text-sm text-retro-white opacity-80 font-body">
-                            Winner receives 15% of reward wallet + start reward
+                            Winner receives 15% of claimed fees + base reward
                         </div>
                     </motion.div>
 
@@ -194,58 +164,38 @@ export const RewardPoolDisplay: React.FC = () => {
                         <div className="flex justify-between items-center">
                             <span className="text-retro-white font-body text-sm flex items-center gap-2">
                                 <Wallet className="w-4 h-4 text-blue-400" />
-                                Reward Wallet Balance:
+                                Base Reward (from prev. round):
                             </span>
                             <span className="text-blue-400 font-display text-base">
-                                {formatSOL(poolData.rewardWalletBalance)} SOL
+                                {formatSOL(poolData.baseReward)} SOL
                             </span>
                         </div>
 
                         <div className="flex justify-between items-center">
                             <span className="text-retro-white font-body text-sm flex items-center gap-2">
                                 <TrendingUp className="w-4 h-4 text-yellow-400" />
-                                Unclaimed Creator Fees:
+                                Claimed Creator Fees (this round):
                             </span>
                             <span className="text-yellow-400 font-display text-base">
-                                {formatSOL(poolData.unclaimedCreatorFees)} SOL
+                                {formatSOL(poolData.claimedCreatorFees)} SOL
                             </span>
                         </div>
 
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-retro-white font-body opacity-80 pl-6">
-                                → 20% goes to Reward Wallet:
+                                → 15% of Creator Fees:
                             </span>
                             <span className="text-candle-green font-display">
-                                +{formatSOL(potentialRewardWalletAdd)} SOL
+                                {formatSOL(poolData.fifteenPercentOfFees)} SOL
                             </span>
-                        </div>
-
-                        <div className="border-t border-retro-gray pt-3 mt-3">
-                            <div className="flex justify-between items-center">
-                                <span className="text-retro-white font-body text-sm">
-                                    Total Reward Wallet (if claimed):
-                                </span>
-                                <span className="text-candle-green font-display text-base">
-                                    {formatSOL(totalRewardWallet)} SOL
-                                </span>
-                            </div>
                         </div>
 
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-retro-white font-body opacity-80 pl-6">
-                                → 15% to Winner:
+                                → 5% goes to next round base:
                             </span>
-                            <span className="text-candle-green font-display">
-                                {formatSOL(totalRewardWallet * poolData.winnerRewardPercentage)} SOL
-                            </span>
-                        </div>
-
-                        <div className="flex justify-between items-center">
-                            <span className="text-retro-white font-body text-sm">
-                                Start Reward (Base):
-                            </span>
-                            <span className="text-candle-green font-display text-base">
-                                +{formatSOL(poolData.startReward)} SOL
+                            <span className="text-blue-400 font-display">
+                                {formatSOL(poolData.fivePercentOfFees)} SOL
                             </span>
                         </div>
 
@@ -255,8 +205,11 @@ export const RewardPoolDisplay: React.FC = () => {
                                     TOTAL CURRENT REWARD:
                                 </span>
                                 <span className="text-candle-green font-display text-xl text-shadow-retro">
-                                    {formatSOL(currentReward)} SOL
+                                    {formatSOL(poolData.currentRewardPool)} SOL
                                 </span>
+                            </div>
+                            <div className="text-xs text-retro-white opacity-60 mt-1">
+                                = Base Reward + 15% of Claimed Fees
                             </div>
                         </div>
                     </div>
@@ -264,9 +217,9 @@ export const RewardPoolDisplay: React.FC = () => {
                     {/* Status */}
                     <div className="flex items-center justify-between text-xs mt-4">
                         <div className="flex items-center space-x-2">
-                            <div className={`w-2 h-2 rounded-full ${error ? 'bg-red-500' : 'bg-candle-green'} animate-pulse`} />
+                            <div className={`w-2 h-2 rounded-full ${error ? 'bg-red-500' : poolData.roundInProgress ? 'bg-candle-green' : 'bg-yellow-500'} animate-pulse`} />
                             <span className="text-retro-white opacity-60 font-body">
-                                {error ? 'Offline' : 'Live • Updates every 15s'}
+                                {error ? 'Offline' : poolData.roundInProgress ? 'Live • Claiming fees every minute' : 'Round Ending...'}
                             </span>
                         </div>
                         <span className="text-retro-white opacity-60 font-body">
@@ -307,17 +260,31 @@ export const RewardPoolDisplay: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Reward Wallet */}
+                        {/* Winner Reward */}
                         <div className="pixel-box bg-retro-gray-dark p-4">
                             <div className="flex justify-between items-center mb-2">
-                                <span className="text-retro-white font-body">Reward Wallet</span>
-                                <span className="text-candle-green font-display">20%</span>
+                                <span className="text-retro-white font-body">Winner Reward</span>
+                                <span className="text-candle-green font-display">15%</span>
                             </div>
                             <div className="w-full bg-retro-black h-2 rounded">
-                                <div className="bg-candle-green h-2 rounded" style={{ width: '20%' }} />
+                                <div className="bg-candle-green h-2 rounded" style={{ width: '15%' }} />
                             </div>
                             <div className="text-xs text-retro-white opacity-60 mt-1">
-                                15% to winner • 5% next round start
+                                15% of claimed fees to volume king
+                            </div>
+                        </div>
+
+                        {/* Next Round Base */}
+                        <div className="pixel-box bg-retro-gray-dark p-4">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-retro-white font-body">Next Round Base</span>
+                                <span className="text-purple-400 font-display">5%</span>
+                            </div>
+                            <div className="w-full bg-retro-black h-2 rounded">
+                                <div className="bg-purple-400 h-2 rounded" style={{ width: '5%' }} />
+                            </div>
+                            <div className="text-xs text-retro-white opacity-60 mt-1">
+                                5% stays in reward wallet as next base
                             </div>
                         </div>
 
