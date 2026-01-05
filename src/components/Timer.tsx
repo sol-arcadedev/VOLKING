@@ -9,6 +9,9 @@ interface CountdownData {
     roundInProgress: boolean;
 }
 
+// IMPORTANT: This must match TIMING.ROUND_DURATION in backend constants.js
+const ROUND_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+
 const useCountdown = (): CountdownData => {
     const [countdown, setCountdown] = useState<CountdownData>({
         minutes: 0,
@@ -27,14 +30,13 @@ const useCountdown = (): CountdownData => {
                 const data = await response.json();
 
                 const now = Date.now();
-                const roundDuration = 15 * 60 * 1000; // 15 minutes in ms
-                const currentRoundStart = now - (now % roundDuration);
-                const nextRoundStart = currentRoundStart + roundDuration;
+                const currentRoundStart = now - (now % ROUND_DURATION_MS);
+                const nextRoundStart = currentRoundStart + ROUND_DURATION_MS;
                 const timeRemaining = nextRoundStart - now;
 
                 const minutes = Math.floor(timeRemaining / 60000);
                 const seconds = Math.floor((timeRemaining % 60000) / 1000);
-                const progress = ((roundDuration - timeRemaining) / roundDuration) * 100;
+                const progress = ((ROUND_DURATION_MS - timeRemaining) / ROUND_DURATION_MS) * 100;
 
                 return {
                     minutes,
@@ -43,16 +45,15 @@ const useCountdown = (): CountdownData => {
                     roundInProgress: data.roundInProgress !== undefined ? data.roundInProgress : true
                 };
             } catch (error) {
-                // Fallback if API fails
+                // Fallback if API fails - use same duration
                 const now = Date.now();
-                const roundDuration = 3 * 60 * 1000;
-                const currentRoundStart = now - (now % roundDuration);
-                const nextRoundStart = currentRoundStart + roundDuration;
+                const currentRoundStart = now - (now % ROUND_DURATION_MS);
+                const nextRoundStart = currentRoundStart + ROUND_DURATION_MS;
                 const timeRemaining = nextRoundStart - now;
 
                 const minutes = Math.floor(timeRemaining / 60000);
                 const seconds = Math.floor((timeRemaining % 60000) / 1000);
-                const progress = ((roundDuration - timeRemaining) / roundDuration) * 100;
+                const progress = ((ROUND_DURATION_MS - timeRemaining) / ROUND_DURATION_MS) * 100;
 
                 return { minutes, seconds, progress, roundInProgress: true };
             }
