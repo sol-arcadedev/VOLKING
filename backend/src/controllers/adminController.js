@@ -3,6 +3,79 @@ import { claimCreatorFeesViaPumpPortal } from '../services/feeService.js';
 import { calculateCurrentReward } from '../services/rewardService.js';
 import * as db from '../services/database.js';
 
+// ============================================
+// SYSTEM CONTROL CONTROLLERS
+// ============================================
+
+export function getSystemStatus(systemControl) {
+    return (req, res) => {
+        try {
+            const status = systemControl.getSystemStatus();
+
+            res.json({
+                success: true,
+                status,
+                timestamp: new Date().toISOString()
+            });
+        } catch (error) {
+            console.error('❌ Error getting system status:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to get system status',
+                details: error.message
+            });
+        }
+    };
+}
+
+export function startSystem(systemControl) {
+    return async (req, res) => {
+        try {
+            console.log('🎮 Admin requested system START');
+            const result = systemControl.startSystem();
+
+            res.json({
+                success: result.success,
+                message: result.message,
+                systemStatus: systemControl.getSystemStatus(),
+                roundNumber: result.roundNumber,
+                baseReward: result.baseReward,
+                timestamp: new Date().toISOString()
+            });
+        } catch (error) {
+            console.error('❌ Error starting system:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to start system',
+                details: error.message
+            });
+        }
+    };
+}
+
+export function stopSystem(systemControl) {
+    return async (req, res) => {
+        try {
+            console.log('🛑 Admin requested system STOP (EMERGENCY)');
+            const result = systemControl.stopSystem();
+
+            res.json({
+                success: result.success,
+                message: result.message,
+                systemStatus: systemControl.getSystemStatus(),
+                timestamp: new Date().toISOString()
+            });
+        } catch (error) {
+            console.error('❌ Error stopping system:', error);
+            res.status(500).json({
+                success: false,
+                error: 'Failed to stop system',
+                details: error.message
+            });
+        }
+    };
+}
+
 export function endRound(roundState, startFeeClaimingInterval, stopFeeClaimingInterval) {
     return async (req, res) => {
         const result = await handleRoundEnd(roundState, startFeeClaimingInterval, stopFeeClaimingInterval);

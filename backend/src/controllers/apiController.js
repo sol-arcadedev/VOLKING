@@ -4,8 +4,9 @@ import { calculateCurrentReward } from '../services/rewardService.js';
 import * as db from '../services/database.js';
 import { FEE_DISTRIBUTION } from '../config/constants.js';
 
-export function getHealth(roundState) {
+export function getHealth(roundState, getSystemActiveStatus) {
     return async (req, res) => {
+        const systemActive = getSystemActiveStatus ? getSystemActiveStatus() : true;
         const dbHealth = await db.checkDatabaseHealth();
         const { FEATURES } = await import('../config/features.js');
         const { ENV } = await import('../config/env.js');
@@ -14,6 +15,7 @@ export function getHealth(roundState) {
 
         res.json({
             status: 'ok',
+            systemActive,
             database: dbHealth.healthy ? 'connected' : 'disconnected',
             databaseVersion: dbHealth.version?.split(' ')[0],
             roundStart: new Date(roundState.currentRoundStart).toISOString(),

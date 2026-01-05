@@ -124,16 +124,16 @@ export const Leaderboard: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-16"
+              className="text-center mb-12"
           >
-            <div className="inline-block pixel-box-pepe px-8 py-4 mb-6">
-              <h2 className="text-5xl md:text-6xl font-display text-black uppercase flex items-center justify-center gap-4">
-                <Crown className="w-12 h-12" />
+            <div className="inline-block pixel-box-pepe px-6 py-3 mb-4">
+              <h2 className="text-3xl md:text-4xl font-display text-black uppercase flex items-center justify-center gap-3">
+                <Crown className="w-8 h-8" />
                 LIVE LEADERBOARD
-                <Crown className="w-12 h-12" />
+                <Crown className="w-8 h-8" />
               </h2>
             </div>
-            <p className="text-2xl text-retro-white font-body mb-8">
+            <p className="text-lg text-retro-white font-body mb-6">
               Current round volume leaders • <span className="text-candle-green">15-minute intervals</span>
             </p>
 

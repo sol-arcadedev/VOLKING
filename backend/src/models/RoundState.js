@@ -65,4 +65,15 @@ export class RoundState {
             .sort((a, b) => b.volume - a.volume)
             .slice(0, limit);
     }
+
+    toDatabase() {
+        return {
+            totalRoundsCompleted: this.totalRoundsCompleted,
+            totalRewardsPaid: this.totalRewardsPaid,
+            totalSupplyBurned: this.totalSupplyBurned,
+            currentRoundNumber: this.roundNumber,
+            rewardWalletBalance: this.baseReward,
+            startReward: this.baseReward,
+        };
+    }
 }

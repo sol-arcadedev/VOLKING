@@ -1,14 +1,33 @@
+// ============================================
+// FILE: src/controllers/webhookController.js - UPDATED WITH SYSTEM CHECK
+// ============================================
 
 import { processTransaction } from '../services/webhookProcessor.js';
 import { calculateCurrentReward } from '../services/rewardService.js';
 
-export function handleWebhook(roundState) {
+export function handleWebhook(roundState, getSystemActiveStatus) {
     return async (req, res) => {
         try {
+            // Check if system is active
+            const systemActive = getSystemActiveStatus();
+
+            // Always respond with 200 to Helius to acknowledge receipt
+            res.status(200).json({
+                success: true,
+                systemActive,
+                message: systemActive ? 'Transaction processed' : 'System inactive - transaction ignored'
+            });
+
+            // Only process if system is active
+            if (!systemActive) {
+                console.log('⏸️  Webhook received but system is INACTIVE - transaction ignored');
+                return;
+            }
+
             const shouldLog = Math.random() < 0.01;
 
             if (shouldLog) {
-                console.log('🔨 Webhook received! (sampled log)');
+                console.log('📨 Webhook received! (sampled log)');
             }
 
             const transactions = Array.isArray(req.body) ? req.body : [req.body];
@@ -26,16 +45,9 @@ export function handleWebhook(roundState) {
                 console.log(`✅ Traders: ${roundState.volumeData.size}, SOL volume: ${roundState.stats.totalSolVolume.toFixed(4)}, Reward pool: ${calculateCurrentReward(roundState.baseReward, roundState.claimedCreatorFees).toFixed(4)}`);
             }
 
-            res.status(200).json({
-                success: true,
-                processed: totalProcessed,
-                excluded: totalExcluded,
-                traders: roundState.volumeData.size,
-                currentRewardPool: calculateCurrentReward(roundState.baseReward, roundState.claimedCreatorFees),
-            });
         } catch (error) {
             console.error('❌ Error:', error);
-            res.status(500).json({ error: error.message });
+            // Already sent 200 response, so don't send another
         }
     };
 }
