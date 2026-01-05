@@ -36,3 +36,4 @@ build
 .output
 .vercel
 .netlify
+/backend/src/config/env.js
