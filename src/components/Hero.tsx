@@ -1,8 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Timer } from './Timer';
 import { TrendingUp, Award, Zap, Github } from 'lucide-react';
-import { FEATURES, SOCIAL_LINKS } from '../constants';
+import { FEATURES } from '../constants';
 
 export const Hero: React.FC = () => {
   const featureIcons = [TrendingUp, Award, Zap];
@@ -118,26 +117,6 @@ export const Hero: React.FC = () => {
                     </div>
                 );
               })}
-            </div>
-
-            <Timer />
-
-            {/* Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-12">
-              <a
-                  href={SOCIAL_LINKS.pumpfun}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-retro-green text-sm"
-              >
-                START TRADING
-              </a>
-              <a
-                  href="#leaderboard"
-                  className="btn-retro-red text-sm"
-              >
-                LEADERBOARD
-              </a>
             </div>
           </div>
         </div>
