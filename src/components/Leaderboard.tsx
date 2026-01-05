@@ -116,17 +116,17 @@ export const Leaderboard: React.FC = () => {
 
   if (loading && entries.length === 0) {
     return (
-        <section id="leaderboard" className="py-32 bg-retro-black">
+        <section id="leaderboard" className="py-12 bg-retro-black">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div className="pixel-box p-16 bg-retro-gray-dark">
-              <div className="text-candle-green font-display text-3xl mb-6 animate-pulse">
+            <div className="pixel-box p-8 bg-retro-gray-dark">
+              <div className="text-candle-green font-display text-xl mb-4 animate-pulse">
                 LOADING LEADERBOARD...
               </div>
               <div className="flex justify-center space-x-2">
                 {[0, 1, 2].map((i) => (
                     <motion.div
                         key={i}
-                        className="w-4 h-4 bg-candle-green"
+                        className="w-3 h-3 bg-candle-green"
                         animate={{ opacity: [0.3, 1, 0.3] }}
                         transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.2 }}
                     />
@@ -139,7 +139,7 @@ export const Leaderboard: React.FC = () => {
   }
 
   return (
-      <section id="leaderboard" className="py-32 bg-retro-black relative overflow-hidden">
+      <section id="leaderboard" className="py-12 bg-retro-black relative overflow-hidden">
         <div className="absolute inset-0 retro-grid opacity-20" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -149,48 +149,48 @@ export const Leaderboard: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-12"
+              className="text-center mb-6"
           >
-            <div className="inline-block pixel-box-pepe px-6 py-3 mb-4">
-              <h2 className="text-3xl md:text-4xl font-display text-black uppercase flex items-center justify-center gap-3">
-                <Crown className="w-8 h-8" />
+            <div className="inline-block pixel-box-pepe px-4 py-2 mb-3">
+              <h2 className="text-2xl md:text-3xl font-display text-black uppercase flex items-center justify-center gap-2">
+                <Crown className="w-6 h-6" />
                 LIVE LEADERBOARD
-                <Crown className="w-8 h-8" />
+                <Crown className="w-6 h-6" />
               </h2>
             </div>
 
             {/* Round Info Cards */}
-            <div className="flex flex-wrap items-center justify-center gap-4 mb-6">
+            <div className="flex flex-wrap items-center justify-center gap-3 mb-4">
               {systemActive && roundStart ? (
                   <>
-                    <div className="pixel-box bg-retro-gray-dark px-6 py-3">
+                    <div className="pixel-box bg-retro-gray-dark px-4 py-2">
                       <div className="flex items-center space-x-2">
-                        <TimerIcon className="w-5 h-5 text-candle-green" />
-                        <span className="text-candle-green font-display text-sm">
+                        <TimerIcon className="w-4 h-4 text-candle-green" />
+                        <span className="text-candle-green font-display text-xs">
                       Started: {new Date(roundStart).toLocaleTimeString()}
                     </span>
                       </div>
                     </div>
-                    <div className="pixel-box bg-retro-gray-dark px-6 py-3">
+                    <div className="pixel-box bg-retro-gray-dark px-4 py-2">
                       <div className="flex items-center space-x-2">
-                        <TimerIcon className="w-5 h-5 text-candle-green animate-pulse" />
-                        <span className="text-candle-green font-display text-xl">
+                        <TimerIcon className="w-4 h-4 text-candle-green animate-pulse" />
+                        <span className="text-candle-green font-display text-lg">
                       {formatCountdown(countdown)}
                     </span>
                       </div>
                     </div>
                   </>
               ) : (
-                  <div className="pixel-box bg-retro-gray-dark px-6 py-3">
-                <span className="text-yellow-500 font-display text-sm">
+                  <div className="pixel-box bg-retro-gray-dark px-4 py-2">
+                <span className="text-yellow-500 font-display text-xs">
                   ⚠️ SYSTEM INACTIVE - Waiting for admin to start
                 </span>
                   </div>
               )}
-              <div className="pixel-box bg-retro-gray-dark px-6 py-3">
+              <div className="pixel-box bg-retro-gray-dark px-4 py-2">
                 <div className="flex items-center space-x-2">
-                  <div className={`w-3 h-3 ${error ? 'bg-red-500' : systemActive ? 'bg-candle-green' : 'bg-yellow-500'} animate-pulse`} />
-                  <span className={`font-display text-sm ${error ? 'text-red-500' : systemActive ? 'text-candle-green' : 'text-yellow-500'}`}>
+                  <div className={`w-2 h-2 ${error ? 'bg-red-500' : systemActive ? 'bg-candle-green' : 'bg-yellow-500'} animate-pulse`} />
+                  <span className={`font-display text-xs ${error ? 'text-red-500' : systemActive ? 'text-candle-green' : 'text-yellow-500'}`}>
                   {error ? '⚠️ Offline' : systemActive ? '🟢 Live' : '⏸️ Inactive'}
                 </span>
                 </div>
@@ -198,11 +198,11 @@ export const Leaderboard: React.FC = () => {
               <motion.button
                   onClick={fetchLeaderboardData}
                   disabled={loading}
-                  className="pixel-box bg-retro-gray-dark px-4 py-3 text-candle-green hover:bg-retro-gray transition-colors disabled:opacity-50"
+                  className="pixel-box bg-retro-gray-dark px-3 py-2 text-candle-green hover:bg-retro-gray transition-colors disabled:opacity-50"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
               >
-                <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </motion.button>
             </div>
 
@@ -210,33 +210,33 @@ export const Leaderboard: React.FC = () => {
                 <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="pixel-box-red bg-retro-gray-dark px-6 py-3 inline-block"
+                    className="pixel-box-red bg-retro-gray-dark px-4 py-2 inline-block"
                 >
-                  <span className="text-red-500 font-body">{error}</span>
+                  <span className="text-red-500 font-body text-sm">{error}</span>
                 </motion.div>
             )}
 
-            <div className="text-retro-white font-body text-sm opacity-70 mt-4">
+            <div className="text-retro-white font-body text-xs opacity-70 mt-2">
               Last updated: {lastUpdate.toLocaleTimeString()} • {totalTraders} total traders
             </div>
           </motion.div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 }}
-                className="pixel-box p-8 bg-retro-gray-dark relative overflow-hidden group"
+                className="pixel-box p-4 bg-retro-gray-dark relative overflow-hidden group"
             >
               <div className="absolute inset-0 bg-candle-green opacity-0 group-hover:opacity-10 transition-opacity" />
               <div className="relative">
-                <div className="flex items-center space-x-3 mb-4">
-                  <TrendingUp className="w-8 h-8 text-candle-green" />
-                  <span className="text-retro-white font-body text-lg">Total Volume</span>
+                <div className="flex items-center space-x-2 mb-2">
+                  <TrendingUp className="w-5 h-5 text-candle-green" />
+                  <span className="text-retro-white font-body text-sm">Total Volume</span>
                 </div>
-                <div className="text-5xl font-display text-candle-green text-shadow-retro mb-2">
+                <div className="text-3xl font-display text-candle-green text-shadow-retro mb-1">
                   {formatVolume(totalVolume)} SOL
                 </div>
                 <div className="text-xs text-retro-white opacity-60 font-body">
@@ -250,15 +250,15 @@ export const Leaderboard: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.2 }}
-                className="pixel-box p-8 bg-retro-gray-dark relative overflow-hidden group"
+                className="pixel-box p-4 bg-retro-gray-dark relative overflow-hidden group"
             >
               <div className="absolute inset-0 bg-yellow-500 opacity-0 group-hover:opacity-10 transition-opacity" />
               <div className="relative">
-                <div className="flex items-center space-x-3 mb-4">
-                  <Crown className="w-8 h-8 text-candle-green animate-pulse" />
-                  <span className="text-retro-white font-body text-lg">Current Leader</span>
+                <div className="flex items-center space-x-2 mb-2">
+                  <Crown className="w-5 h-5 text-candle-green animate-pulse" />
+                  <span className="text-retro-white font-body text-sm">Current Leader</span>
                 </div>
-                <div className="text-4xl font-display text-candle-green text-shadow-retro mb-2">
+                <div className="text-3xl font-display text-candle-green text-shadow-retro mb-1">
                   {formatWallet(currentLeader, 5)}
                 </div>
                 <div className="text-xs text-retro-white opacity-60 font-body">
@@ -272,15 +272,15 @@ export const Leaderboard: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.3 }}
-                className="pixel-box p-8 bg-retro-gray-dark relative overflow-hidden group"
+                className="pixel-box p-4 bg-retro-gray-dark relative overflow-hidden group"
             >
               <div className="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-10 transition-opacity" />
               <div className="relative">
-                <div className="flex items-center space-x-3 mb-4">
-                  <Users className="w-8 h-8 text-candle-green" />
-                  <span className="text-retro-white font-body text-lg">Active Traders</span>
+                <div className="flex items-center space-x-2 mb-2">
+                  <Users className="w-5 h-5 text-candle-green" />
+                  <span className="text-retro-white font-body text-sm">Active Traders</span>
                 </div>
-                <div className="text-5xl font-display text-candle-green text-shadow-retro mb-2">
+                <div className="text-3xl font-display text-candle-green text-shadow-retro mb-1">
                   {totalTraders}
                 </div>
                 <div className="text-xs text-retro-white opacity-60 font-body">
@@ -298,8 +298,8 @@ export const Leaderboard: React.FC = () => {
               className="pixel-box bg-retro-gray-dark"
           >
             {/* Header */}
-            <div className="border-b-4 border-candle-green px-8 py-5 bg-retro-black">
-              <div className="grid grid-cols-12 gap-4 font-display text-sm text-candle-green uppercase">
+            <div className="border-b-4 border-candle-green px-4 py-3 bg-retro-black">
+              <div className="grid grid-cols-12 gap-4 font-display text-xs text-candle-green uppercase">
                 <div className="col-span-2">RANK</div>
                 <div className="col-span-5">WALLET</div>
                 <div className="col-span-3 text-right">VOLUME</div>
@@ -308,14 +308,14 @@ export const Leaderboard: React.FC = () => {
             </div>
 
             {/* Rows */}
-            <div className="max-h-[600px] overflow-y-auto">
+            <div className="max-h-[400px] overflow-y-auto">
               {entries.length === 0 ? (
-                  <div className="px-8 py-16 text-center">
-                    <div className="text-3xl mb-4">👑</div>
-                    <div className="text-retro-white font-body text-xl mb-3">
+                  <div className="px-4 py-8 text-center">
+                    <div className="text-2xl mb-3">👑</div>
+                    <div className="text-retro-white font-body text-lg mb-2">
                       {systemActive ? 'No trades yet this round' : 'System is inactive'}
                     </div>
-                    <div className="text-candle-green font-display text-base">
+                    <div className="text-candle-green font-display text-sm">
                       {systemActive ? 'Be the first to trade and claim the crown!' : 'Waiting for admin to start the system'}
                     </div>
                   </div>
@@ -330,24 +330,24 @@ export const Leaderboard: React.FC = () => {
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: index * 0.05 }}
-                            className={`px-8 py-5 border-b-2 border-retro-gray transition-all hover:bg-retro-black ${
+                            className={`px-4 py-3 border-b-2 border-retro-gray transition-all hover:bg-retro-black ${
                                 isWinner ? 'bg-candle-green bg-opacity-15' : ''
                             }`}
                         >
                           <div className="grid grid-cols-12 gap-4 items-center">
                             {/* Rank */}
                             <div className="col-span-2">
-                              <div className="flex items-center space-x-3">
+                              <div className="flex items-center space-x-2">
                                 {isWinner && (
-                                    <Crown className="w-7 h-7 text-candle-green animate-pulse" />
+                                    <Crown className="w-5 h-5 text-candle-green animate-pulse" />
                                 )}
                                 {index === 1 && (
-                                    <Trophy className="w-6 h-6 text-gray-400" />
+                                    <Trophy className="w-4 h-4 text-gray-400" />
                                 )}
                                 {index === 2 && (
-                                    <Trophy className="w-6 h-6 text-amber-600" />
+                                    <Trophy className="w-4 h-4 text-amber-600" />
                                 )}
-                                <span className={`font-display text-xl ${
+                                <span className={`font-display text-base ${
                                     isTopThree ? 'text-candle-green' : 'text-retro-white'
                                 }`}>
                             #{index + 1}
@@ -361,12 +361,12 @@ export const Leaderboard: React.FC = () => {
                                   href={`https://solscan.io/account/${entry.wallet}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="font-body text-lg text-retro-white hover:text-candle-green transition-colors"
+                                  className="font-body text-base text-retro-white hover:text-candle-green transition-colors"
                               >
                                 {formatWallet(entry.wallet, 6)}
                               </a>
                               {isWinner && (
-                                  <div className="text-xs font-display text-candle-green mt-1 animate-pulse">
+                                  <div className="text-xs font-display text-candle-green mt-0.5 animate-pulse">
                                     👑 CURRENT VOLUME KING
                                   </div>
                               )}
@@ -374,15 +374,15 @@ export const Leaderboard: React.FC = () => {
 
                             {/* Volume */}
                             <div className="col-span-3 text-right">
-                              <div className="font-display text-candle-green text-xl">
+                              <div className="font-display text-candle-green text-base">
                                 {formatVolume(entry.volume)} SOL
                               </div>
                             </div>
 
                             {/* Trades */}
                             <div className="col-span-2 text-right">
-                              <div className="pixel-box bg-retro-black px-4 py-2 inline-block">
-                          <span className="font-display text-candle-green text-base">
+                              <div className="pixel-box bg-retro-black px-3 py-1 inline-block">
+                          <span className="font-display text-candle-green text-sm">
                             {entry.trades}
                           </span>
                               </div>
@@ -396,7 +396,7 @@ export const Leaderboard: React.FC = () => {
           </motion.div>
 
           {/* Reward Pool Display */}
-          <div className="mb-16">
+          <div className="mt-6">
             <RewardPoolDisplay />
           </div>
         </div>
