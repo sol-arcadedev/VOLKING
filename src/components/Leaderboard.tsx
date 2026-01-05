@@ -221,183 +221,132 @@ export const Leaderboard: React.FC = () => {
             </div>
           </motion.div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {/* Main Content: Leaderboard + Reward Pool Side by Side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            {/* LEFT SIDE: Leaderboard Table */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.1 }}
-                className="pixel-box p-4 bg-retro-gray-dark relative overflow-hidden group"
+                className="pixel-box bg-retro-gray-dark"
             >
-              <div className="absolute inset-0 bg-candle-green opacity-0 group-hover:opacity-10 transition-opacity" />
-              <div className="relative">
-                <div className="flex items-center space-x-2 mb-2">
-                  <TrendingUp className="w-5 h-5 text-candle-green" />
-                  <span className="text-retro-white font-body text-sm">Total Volume</span>
-                </div>
-                <div className="text-3xl font-display text-candle-green text-shadow-retro mb-1">
-                  {formatVolume(totalVolume)} SOL
-                </div>
-                <div className="text-xs text-retro-white opacity-60 font-body">
-                  This round
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
-                className="pixel-box p-4 bg-retro-gray-dark relative overflow-hidden group"
-            >
-              <div className="absolute inset-0 bg-yellow-500 opacity-0 group-hover:opacity-10 transition-opacity" />
-              <div className="relative">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Crown className="w-5 h-5 text-candle-green animate-pulse" />
-                  <span className="text-retro-white font-body text-sm">Current Leader</span>
-                </div>
-                <div className="text-3xl font-display text-candle-green text-shadow-retro mb-1">
-                  {formatWallet(currentLeader, 5)}
-                </div>
-                <div className="text-xs text-retro-white opacity-60 font-body">
-                  {entries[0] ? `${entries[0].trades} trades` : 'No trades yet'}
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.3 }}
-                className="pixel-box p-4 bg-retro-gray-dark relative overflow-hidden group"
-            >
-              <div className="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-10 transition-opacity" />
-              <div className="relative">
-                <div className="flex items-center space-x-2 mb-2">
-                  <Users className="w-5 h-5 text-candle-green" />
-                  <span className="text-retro-white font-body text-sm">Active Traders</span>
-                </div>
-                <div className="text-3xl font-display text-candle-green text-shadow-retro mb-1">
-                  {totalTraders}
-                </div>
-                <div className="text-xs text-retro-white opacity-60 font-body">
-                  Competing this round
-                </div>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Leaderboard Table */}
-          <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="pixel-box bg-retro-gray-dark"
-          >
-            {/* Header */}
-            <div className="border-b-4 border-candle-green px-4 py-3 bg-retro-black">
-              <div className="grid grid-cols-12 gap-4 font-display text-xs text-candle-green uppercase">
-                <div className="col-span-2">RANK</div>
-                <div className="col-span-5">WALLET</div>
-                <div className="col-span-3 text-right">VOLUME</div>
-                <div className="col-span-2 text-right">TRADES</div>
-              </div>
-            </div>
-
-            {/* Rows */}
-            <div className="max-h-[400px] overflow-y-auto">
-              {entries.length === 0 ? (
-                  <div className="px-4 py-8 text-center">
-                    <div className="text-2xl mb-3">👑</div>
-                    <div className="text-retro-white font-body text-lg mb-2">
-                      {systemActive ? 'No trades yet this round' : 'System is inactive'}
-                    </div>
-                    <div className="text-candle-green font-display text-sm">
-                      {systemActive ? 'Be the first to trade and claim the crown!' : 'Waiting for admin to start the system'}
-                    </div>
+              {/* Quick Stats */}
+              <div className="border-b-4 border-candle-green px-4 py-3 bg-retro-black">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-candle-green" />
+                    <span className="text-candle-green font-display text-sm">{formatVolume(totalVolume)} SOL</span>
                   </div>
-              ) : (
-                  entries.slice(0, 10).map((entry, index) => {
-                    const isWinner = index === 0;
-                    const isTopThree = index < 3;
+                  <div className="flex items-center gap-2">
+                    <Crown className="w-4 h-4 text-candle-green" />
+                    <span className="text-candle-green font-display text-sm">{formatWallet(currentLeader, 4)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-candle-green" />
+                    <span className="text-candle-green font-display text-sm">{totalTraders}</span>
+                  </div>
+                </div>
+              </div>
 
-                    return (
-                        <motion.div
-                            key={entry.wallet}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                            className={`px-4 py-3 border-b-2 border-retro-gray transition-all hover:bg-retro-black ${
-                                isWinner ? 'bg-candle-green bg-opacity-15' : ''
-                            }`}
-                        >
-                          <div className="grid grid-cols-12 gap-4 items-center">
-                            {/* Rank */}
-                            <div className="col-span-2">
-                              <div className="flex items-center space-x-2">
-                                {isWinner && (
-                                    <Crown className="w-5 h-5 text-candle-green animate-pulse" />
-                                )}
-                                {index === 1 && (
-                                    <Trophy className="w-4 h-4 text-gray-400" />
-                                )}
-                                {index === 2 && (
-                                    <Trophy className="w-4 h-4 text-amber-600" />
-                                )}
-                                <span className={`font-display text-base ${
-                                    isTopThree ? 'text-candle-green' : 'text-retro-white'
-                                }`}>
+              {/* Header */}
+              <div className="border-b-2 border-candle-green px-3 py-2 bg-retro-black">
+                <div className="grid grid-cols-12 gap-3 font-display text-xs text-candle-green uppercase">
+                  <div className="col-span-2">RANK</div>
+                  <div className="col-span-5">WALLET</div>
+                  <div className="col-span-3 text-right">VOLUME</div>
+                  <div className="col-span-2 text-right">TRADES</div>
+                </div>
+              </div>
+
+              {/* Rows */}
+              <div className="max-h-[500px] overflow-y-auto">
+                {entries.length === 0 ? (
+                    <div className="px-3 py-6 text-center">
+                      <div className="text-xl mb-2">👑</div>
+                      <div className="text-retro-white font-body text-sm mb-1">
+                        {systemActive ? 'No trades yet this round' : 'System is inactive'}
+                      </div>
+                      <div className="text-candle-green font-display text-xs">
+                        {systemActive ? 'Be the first to trade!' : 'Waiting for admin'}
+                      </div>
+                    </div>
+                ) : (
+                    entries.slice(0, 10).map((entry, index) => {
+                      const isWinner = index === 0;
+                      const isTopThree = index < 3;
+
+                      return (
+                          <motion.div
+                              key={entry.wallet}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: index * 0.05 }}
+                              className={`px-3 py-2 border-b border-retro-gray transition-all hover:bg-retro-black ${
+                                  isWinner ? 'bg-candle-green bg-opacity-15' : ''
+                              }`}
+                          >
+                            <div className="grid grid-cols-12 gap-3 items-center">
+                              {/* Rank */}
+                              <div className="col-span-2">
+                                <div className="flex items-center space-x-1">
+                                  {isWinner && (
+                                      <Crown className="w-4 h-4 text-candle-green animate-pulse" />
+                                  )}
+                                  {index === 1 && (
+                                      <Trophy className="w-3 h-3 text-gray-400" />
+                                  )}
+                                  {index === 2 && (
+                                      <Trophy className="w-3 h-3 text-amber-600" />
+                                  )}
+                                  <span className={`font-display text-sm ${
+                                      isTopThree ? 'text-candle-green' : 'text-retro-white'
+                                  }`}>
                             #{index + 1}
                           </span>
+                                </div>
                               </div>
-                            </div>
 
-                            {/* Wallet */}
-                            <div className="col-span-5">
-                              <a
-                                  href={`https://solscan.io/account/${entry.wallet}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="font-body text-base text-retro-white hover:text-candle-green transition-colors"
-                              >
-                                {formatWallet(entry.wallet, 6)}
-                              </a>
-                              {isWinner && (
-                                  <div className="text-xs font-display text-candle-green mt-0.5 animate-pulse">
-                                    👑 CURRENT VOLUME KING
-                                  </div>
-                              )}
-                            </div>
-
-                            {/* Volume */}
-                            <div className="col-span-3 text-right">
-                              <div className="font-display text-candle-green text-base">
-                                {formatVolume(entry.volume)} SOL
+                              {/* Wallet */}
+                              <div className="col-span-5">
+                                <a
+                                    href={`https://solscan.io/account/${entry.wallet}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-body text-sm text-retro-white hover:text-candle-green transition-colors"
+                                >
+                                  {formatWallet(entry.wallet, 5)}
+                                </a>
                               </div>
-                            </div>
 
-                            {/* Trades */}
-                            <div className="col-span-2 text-right">
-                              <div className="pixel-box bg-retro-black px-3 py-1 inline-block">
-                          <span className="font-display text-candle-green text-sm">
+                              {/* Volume */}
+                              <div className="col-span-3 text-right">
+                                <div className="font-display text-candle-green text-sm">
+                                  {formatVolume(entry.volume)}
+                                </div>
+                              </div>
+
+                              {/* Trades */}
+                              <div className="col-span-2 text-right">
+                                <div className="pixel-box bg-retro-black px-2 py-0.5 inline-block">
+                          <span className="font-display text-candle-green text-xs">
                             {entry.trades}
                           </span>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </motion.div>
-                    );
-                  })
-              )}
-            </div>
-          </motion.div>
+                          </motion.div>
+                      );
+                    })
+                )}
+              </div>
+            </motion.div>
 
-          {/* Reward Pool Display */}
-          <div className="mt-6">
-            <RewardPoolDisplay />
+            {/* RIGHT SIDE: Reward Pool Display */}
+            <div className="flex flex-col gap-6">
+              <RewardPoolDisplay />
+            </div>
+
           </div>
         </div>
       </section>
