@@ -6,6 +6,8 @@ import { ENV } from '../config/env.js';
 import { FEATURES } from '../config/features.js';
 import { API_ENDPOINTS, BLOCKCHAIN } from '../config/constants.js';
 
+const MINIMUM_BALANCE_SOL = 0.02; // Reserve for transaction fees
+
 export async function executeBuybackAndBurn(amountSOL) {
     if (!FEATURES.BUYBACK_BURN) {
         console.log('⚠️ Buyback & Burn disabled');
@@ -29,6 +31,35 @@ export async function executeBuybackAndBurn(amountSOL) {
     if (!ENV.TOKEN_ADDRESS) {
         console.log('❌ TOKEN_ADDRESS not configured');
         return { success: false, tokensBurned: 0, error: 'TOKEN_ADDRESS not configured' };
+    }
+
+    // Check wallet balance before proceeding
+    try {
+        const walletBalance = await connection.getBalance(creatorFeeKeypair.publicKey);
+        const walletBalanceSOL = walletBalance / LAMPORTS_PER_SOL;
+
+        console.log(`   💰 Current wallet balance: ${walletBalanceSOL.toFixed(4)} SOL`);
+
+        // Ensure we leave at least MINIMUM_BALANCE_SOL in the wallet
+        const maxBuybackAmount = walletBalanceSOL - MINIMUM_BALANCE_SOL;
+
+        if (maxBuybackAmount <= 0) {
+            console.log(`   ⚠️ Insufficient balance. Need at least ${MINIMUM_BALANCE_SOL} SOL reserved for fees`);
+            return {
+                success: false,
+                tokensBurned: 0,
+                error: `Insufficient balance. Current: ${walletBalanceSOL.toFixed(4)} SOL, Required reserve: ${MINIMUM_BALANCE_SOL} SOL`
+            };
+        }
+
+        if (amountSOL > maxBuybackAmount) {
+            console.log(`   ⚠️ Buyback amount (${amountSOL.toFixed(4)} SOL) exceeds safe limit (${maxBuybackAmount.toFixed(4)} SOL)`);
+            console.log(`   📉 Reducing buyback amount to ${maxBuybackAmount.toFixed(4)} SOL to preserve ${MINIMUM_BALANCE_SOL} SOL reserve`);
+            amountSOL = maxBuybackAmount;
+        }
+    } catch (error) {
+        console.error('❌ Failed to check wallet balance:', error);
+        return { success: false, tokensBurned: 0, error: 'Failed to check wallet balance' };
     }
 
     let swapSignature = null;
@@ -147,6 +178,11 @@ export async function executeBuybackAndBurn(amountSOL) {
         console.log(`   ✅ Burn complete: ${burnSignature}`);
         console.log(`   🔍 Burn signature: ${burnSignature}`);
         console.log(`   🔥 Burned ${tokensBurned.toLocaleString()} tokens`);
+
+        // Verify final balance
+        const finalBalance = await connection.getBalance(creatorFeeKeypair.publicKey);
+        const finalBalanceSOL = finalBalance / LAMPORTS_PER_SOL;
+        console.log(`   💰 Final wallet balance: ${finalBalanceSOL.toFixed(4)} SOL`);
 
         return {
             success: true,

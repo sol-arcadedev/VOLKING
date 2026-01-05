@@ -422,7 +422,3 @@ export async function closeDatabase() {
         console.error('❌ Error closing database:', error);
     }
 }
-
-// Handle process termination
-process.on('SIGTERM', closeDatabase);
-process.on('SIGINT', closeDatabase);
