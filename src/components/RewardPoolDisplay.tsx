@@ -282,28 +282,35 @@ export const RewardPoolDisplay: React.FC = () => {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-2 gap-2 mt-3">
-                    <div className="pixel-box bg-retro-gray-dark p-2.5 text-center">
-                        <div className="text-xl font-display text-candle-green text-shadow-retro">
-                            {formatSOL(poolData.totalRewardsPaid)}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className="pixel-box p-4 bg-retro-black"
+                >
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="pixel-box bg-retro-gray-dark p-3 text-center">
+                            <div className="text-2xl font-display text-candle-green text-shadow-retro mb-1">
+                                {formatSOL(poolData.totalRewardsPaid)}
+                            </div>
+                            <div className="text-sm text-retro-white opacity-70 font-body">
+                                Rewards Paid (SOL)
+                            </div>
                         </div>
-                        <div className="text-xs text-retro-white opacity-60">
-                            SOL Paid
+                        <div className="pixel-box bg-retro-gray-dark p-3 text-center">
+                            <div className="text-2xl font-display text-orange-500 text-shadow-retro mb-1">
+                                {poolData.totalSupplyBurned > 1000000
+                                    ? `${(poolData.totalSupplyBurned / 1000000).toFixed(2)}M`
+                                    : poolData.totalSupplyBurned > 1000
+                                        ? `${(poolData.totalSupplyBurned / 1000).toFixed(2)}K`
+                                        : poolData.totalSupplyBurned.toFixed(0)}
+                            </div>
+                            <div className="text-sm text-retro-white opacity-70 font-body">
+                                Supply Burned
+                            </div>
                         </div>
                     </div>
-                    <div className="pixel-box bg-retro-gray-dark p-2.5 text-center">
-                        <div className="text-xl font-display text-orange-500 text-shadow-retro">
-                            {poolData.totalSupplyBurned > 1000000
-                                ? `${(poolData.totalSupplyBurned / 1000000).toFixed(2)}M`
-                                : poolData.totalSupplyBurned > 1000
-                                    ? `${(poolData.totalSupplyBurned / 1000).toFixed(2)}K`
-                                    : poolData.totalSupplyBurned.toFixed(0)}
-                        </div>
-                        <div className="text-xs text-retro-white opacity-60">
-                            Burned
-                        </div>
-                    </div>
-                </div>
+                </motion.div>
             </motion.div>
         </div>
     );
