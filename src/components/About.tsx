@@ -59,14 +59,14 @@ export const About: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-center mb-20"
+              className="text-center mb-16"
           >
-            <div className="inline-block pixel-box bg-pepe-green px-8 py-4 mb-6">
-              <h2 className="text-5xl md:text-6xl font-display text-black uppercase">
+            <div className="inline-block pixel-box bg-pepe-green px-6 py-3 mb-4">
+              <h2 className="text-3xl md:text-4xl font-display text-black uppercase">
                 HOW IT WORKS
               </h2>
             </div>
-            <p className="text-2xl text-retro-white font-body max-w-3xl mx-auto">
+            <p className="text-lg text-retro-white font-body max-w-3xl mx-auto">
               Simple competitive mechanism. <span className="text-candle-green">Trade to win.</span> Win to earn.
             </p>
           </motion.div>

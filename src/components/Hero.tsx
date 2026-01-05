@@ -34,30 +34,30 @@ export const Hero: React.FC = () => {
 
             {/* Logo */}
             <motion.div
-                className="mb-8"
+                className="mb-6"
                 animate={{ y: [0, -8, 0] }}
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
             >
               <img
                   src="/volking-logo.png"
                   alt="VOLKING"
-                  className="w-48 h-48 mx-auto mb-8"
+                  className="w-32 h-32 mx-auto mb-4"
                   style={{ imageRendering: 'pixelated' }}
               />
             </motion.div>
 
             {/* Title */}
-            <h2 className="text-5xl sm:text-7xl font-display text-candle-green text-shadow-retro mb-6 uppercase leading-tight">
+            <h2 className="text-4xl sm:text-5xl font-display text-candle-green text-shadow-retro mb-4 uppercase leading-tight">
               RULE THE
               <br />
               VOLUME
             </h2>
 
-            <p className="text-2xl font-body text-retro-white mb-4">
+            <p className="text-xl font-body text-retro-white mb-3">
               TRADE. COMPETE. WIN.
             </p>
 
-            <p className="text-xl font-body text-candle-green-dark mb-8">
+            <p className="text-lg font-body text-candle-green-dark mb-6">
               &gt; EVERY 15 MINUTES = NEW KING
             </p>
 
