@@ -16,10 +16,10 @@ const App: React.FC = () => {
             <main>
                 <Hero />
                 <Leaderboard />
+                <Rewards />
                 <About />
                 <GlobalStats />
                 <HallOfDegens />
-                <Rewards />
             </main>
             <Footer />
         </div>
