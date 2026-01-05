@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, TrendingUp, RefreshCw, Users, Crown, Timer as TimerIcon } from 'lucide-react';
+import { RewardPoolDisplay } from './RewardPoolDisplay';
+
 
 // Types
 interface VolumeData {
@@ -357,6 +359,12 @@ export const Leaderboard: React.FC = () => {
               )}
             </div>
           </motion.div>
+
+
+          {/* Reward Pool Display */}
+          <div className="mb-16">
+            <RewardPoolDisplay />
+          </div>
         </div>
       </section>
   );

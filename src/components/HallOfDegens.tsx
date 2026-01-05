@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, Award, RefreshCw, Crown, ExternalLink, DollarSign } from 'lucide-react';
-import { RewardPoolDisplay } from './RewardPoolDisplay';
 
 interface DegenStats {
     wallet: string;
@@ -223,11 +222,6 @@ export const HallOfDegens: React.FC = () => {
                         </motion.button>
                     ))}
                 </motion.div>
-
-                {/* Reward Pool Display */}
-                <div className="mb-16">
-                    <RewardPoolDisplay />
-                </div>
 
                 {/* Section Divider */}
                 <div className="section-divider mb-16" />
