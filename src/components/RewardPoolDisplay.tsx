@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { RefreshCw, Crown, Wallet, TrendingUp, Flame } from 'lucide-react';
+import { RefreshCw, Crown, Wallet, TrendingUp } from 'lucide-react';
 
 interface RewardPoolData {
     claimedCreatorFees: number;
@@ -216,70 +216,6 @@ export const RewardPoolDisplay: React.FC = () => {
                 transition={{ delay: 0.1 }}
                 className="pixel-box p-4 bg-retro-black"
             >
-                <div className="flex items-center space-x-2 mb-3">
-                    <Flame className="w-5 h-5 text-orange-500" />
-                    <h3 className="text-sm font-display text-orange-500 uppercase">
-                        FEE DISTRIBUTION
-                    </h3>
-                </div>
-
-                <div className="space-y-2.5">
-                    {/* Treasury */}
-                    <div className="pixel-box bg-retro-gray-dark p-2.5">
-                        <div className="flex justify-between items-center mb-1">
-                            <span className="text-retro-white font-body text-xs">Treasury</span>
-                            <span className="text-blue-400 font-display text-xs">70%</span>
-                        </div>
-                        <div className="w-full bg-retro-black h-1.5 rounded">
-                            <div className="bg-blue-400 h-1.5 rounded" style={{ width: '70%' }} />
-                        </div>
-                        <div className="text-xs text-retro-white opacity-60 mt-1">
-                            Protocol development
-                        </div>
-                    </div>
-
-                    {/* Winner */}
-                    <div className="pixel-box bg-retro-gray-dark p-2.5">
-                        <div className="flex justify-between items-center mb-1">
-                            <span className="text-retro-white font-body text-xs">Winner</span>
-                            <span className="text-candle-green font-display text-xs">15%</span>
-                        </div>
-                        <div className="w-full bg-retro-black h-1.5 rounded">
-                            <div className="bg-candle-green h-1.5 rounded" style={{ width: '15%' }} />
-                        </div>
-                        <div className="text-xs text-retro-white opacity-60 mt-1">
-                            Volume king reward
-                        </div>
-                    </div>
-
-                    {/* Buyback */}
-                    <div className="pixel-box bg-retro-gray-dark p-2.5">
-                        <div className="flex justify-between items-center mb-1">
-                            <span className="text-retro-white font-body text-xs">Buyback</span>
-                            <span className="text-orange-500 font-display text-xs">10%</span>
-                        </div>
-                        <div className="w-full bg-retro-black h-1.5 rounded">
-                            <div className="bg-orange-500 h-1.5 rounded" style={{ width: '10%' }} />
-                        </div>
-                        <div className="text-xs text-retro-white opacity-60 mt-1">
-                            Buy & burn VOLK
-                        </div>
-                    </div>
-
-                    {/* Next Round */}
-                    <div className="pixel-box bg-retro-gray-dark p-2.5">
-                        <div className="flex justify-between items-center mb-1">
-                            <span className="text-retro-white font-body text-xs">Next Round</span>
-                            <span className="text-purple-400 font-display text-xs">5%</span>
-                        </div>
-                        <div className="w-full bg-retro-black h-1.5 rounded">
-                            <div className="bg-purple-400 h-1.5 rounded" style={{ width: '5%' }} />
-                        </div>
-                        <div className="text-xs text-retro-white opacity-60 mt-1">
-                            Next base reward
-                        </div>
-                    </div>
-                </div>
 
                 {/* Stats */}
                 <motion.div
