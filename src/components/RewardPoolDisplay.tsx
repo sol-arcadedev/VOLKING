@@ -202,6 +202,10 @@ export const RewardPoolDisplay: React.FC = () => {
                             #{poolData.roundNumber}
                         </span>
                     </div>
+
+                    <div className="text-xs text-retro-white opacity-40 font-body mt-1 text-right">
+                        Updated: {lastUpdate.toLocaleTimeString()}
+                    </div>
                 </div>
             </motion.div>
 
