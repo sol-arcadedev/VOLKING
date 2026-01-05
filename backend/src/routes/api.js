@@ -5,7 +5,7 @@ import { handleWebhook } from '../controllers/webhookController.js';
 export function createApiRoutes(roundState, getSystemActiveStatus) {
     const router = express.Router();
     router.get('/health', apiController.getHealth(roundState, getSystemActiveStatus));
-    router.get('/leaderboard', apiController.getLeaderboard(roundState));
+    router.get('/leaderboard', apiController.getLeaderboard(roundState, getSystemActiveStatus));
     router.get('/reward-pool', apiController.getRewardPool(roundState));
     router.get('/global-stats', apiController.getGlobalStats(roundState));
     router.get('/hall-of-degens', apiController.getHallOfDegens);

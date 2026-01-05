@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { Trophy, TrendingUp, RefreshCw, Users, Crown, Timer as TimerIcon } from 'lucide-react';
 import { RewardPoolDisplay } from './RewardPoolDisplay';
 
-
 // Types
 interface VolumeData {
   wallet: string;
@@ -16,6 +15,7 @@ interface LeaderboardResponse {
   totalTraders: number;
   roundStart: number;
   nextRoundStart: number;
+  systemActive: boolean;
 }
 
 // Utility functions
@@ -34,14 +34,11 @@ const formatVolume = (volume: number): string => {
   return volume.toFixed(4);
 };
 
-const getCurrentRoundStart = (): number => {
-  const now = Date.now();
-  const roundDuration = 15 * 60 * 1000;
-  return now - (now % roundDuration);
-};
-
-const getNextRoundStart = (): number => {
-  return getCurrentRoundStart() + 15 * 60 * 1000;
+const formatCountdown = (ms: number): string => {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 };
 
 export const Leaderboard: React.FC = () => {
@@ -50,7 +47,10 @@ export const Leaderboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [error, setError] = useState<string | null>(null);
-  const [currentRoundStart, setCurrentRoundStart] = useState<number>(getCurrentRoundStart());
+  const [roundStart, setRoundStart] = useState<number | null>(null);
+  const [nextRoundStart, setNextRoundStart] = useState<number | null>(null);
+  const [systemActive, setSystemActive] = useState(false);
+  const [countdown, setCountdown] = useState<number>(0);
 
   const API_URL = import.meta.env?.VITE_API_URL || 'https://volking-production.up.railway.app';
 
@@ -67,7 +67,17 @@ export const Leaderboard: React.FC = () => {
 
       setEntries(data.leaderboard);
       setTotalTraders(data.totalTraders);
-      setCurrentRoundStart(data.roundStart);
+      setSystemActive(data.systemActive || false);
+
+      // Only set round times if system is active
+      if (data.systemActive) {
+        setRoundStart(data.roundStart);
+        setNextRoundStart(data.nextRoundStart);
+      } else {
+        setRoundStart(null);
+        setNextRoundStart(null);
+      }
+
       setLastUpdate(new Date());
       setLoading(false);
     } catch (err) {
@@ -77,15 +87,30 @@ export const Leaderboard: React.FC = () => {
     }
   }, [API_URL]);
 
+  // Update countdown every second
+  useEffect(() => {
+    if (!systemActive || !nextRoundStart) {
+      setCountdown(0);
+      return;
+    }
+
+    const updateCountdown = () => {
+      const now = Date.now();
+      const timeLeft = Math.max(0, nextRoundStart - now);
+      setCountdown(timeLeft);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [systemActive, nextRoundStart]);
+
   useEffect(() => {
     fetchLeaderboardData();
     const interval = setInterval(fetchLeaderboardData, 10000);
     return () => clearInterval(interval);
   }, [fetchLeaderboardData]);
 
-  const nextRoundStart = getNextRoundStart();
-  const timeUntilNextRound = Math.max(0, nextRoundStart - Date.now());
-  const roundProgress = ((15 * 60 * 1000 - timeUntilNextRound) / (15 * 60 * 1000)) * 100;
   const totalVolume = entries.reduce((sum, e) => sum + e.volume, 0);
   const currentLeader = entries[0]?.wallet || '---';
 
@@ -133,31 +158,41 @@ export const Leaderboard: React.FC = () => {
                 <Crown className="w-8 h-8" />
               </h2>
             </div>
-            <p className="text-lg text-retro-white font-body mb-6">
-              Current round volume leaders • <span className="text-candle-green">15-minute intervals</span>
-            </p>
 
             {/* Round Info Cards */}
             <div className="flex flex-wrap items-center justify-center gap-4 mb-6">
-              <div className="pixel-box bg-retro-gray-dark px-6 py-3">
-                <div className="flex items-center space-x-2">
-                  <TimerIcon className="w-5 h-5 text-candle-green" />
-                  <span className="text-candle-green font-display text-sm">
-                    Started: {new Date(currentRoundStart).toLocaleTimeString()}
-                  </span>
-                </div>
-              </div>
-              <div className="pixel-box bg-retro-gray-dark px-6 py-3">
-                <span className="text-candle-green font-display text-sm">
-                  Progress: {roundProgress.toFixed(0)}%
+              {systemActive && roundStart ? (
+                  <>
+                    <div className="pixel-box bg-retro-gray-dark px-6 py-3">
+                      <div className="flex items-center space-x-2">
+                        <TimerIcon className="w-5 h-5 text-candle-green" />
+                        <span className="text-candle-green font-display text-sm">
+                      Started: {new Date(roundStart).toLocaleTimeString()}
+                    </span>
+                      </div>
+                    </div>
+                    <div className="pixel-box bg-retro-gray-dark px-6 py-3">
+                      <div className="flex items-center space-x-2">
+                        <TimerIcon className="w-5 h-5 text-candle-green animate-pulse" />
+                        <span className="text-candle-green font-display text-xl">
+                      {formatCountdown(countdown)}
+                    </span>
+                      </div>
+                    </div>
+                  </>
+              ) : (
+                  <div className="pixel-box bg-retro-gray-dark px-6 py-3">
+                <span className="text-yellow-500 font-display text-sm">
+                  ⚠️ SYSTEM INACTIVE - Waiting for admin to start
                 </span>
-              </div>
+                  </div>
+              )}
               <div className="pixel-box bg-retro-gray-dark px-6 py-3">
                 <div className="flex items-center space-x-2">
-                  <div className={`w-3 h-3 ${error ? 'bg-red-500' : 'bg-candle-green'} animate-pulse`} />
-                  <span className={`font-display text-sm ${error ? 'text-red-500' : 'text-candle-green'}`}>
-                    {error ? '⚠️ Offline' : '🟢 Live'}
-                  </span>
+                  <div className={`w-3 h-3 ${error ? 'bg-red-500' : systemActive ? 'bg-candle-green' : 'bg-yellow-500'} animate-pulse`} />
+                  <span className={`font-display text-sm ${error ? 'text-red-500' : systemActive ? 'text-candle-green' : 'text-yellow-500'}`}>
+                  {error ? '⚠️ Offline' : systemActive ? '🟢 Live' : '⏸️ Inactive'}
+                </span>
                 </div>
               </div>
               <motion.button
@@ -278,10 +313,10 @@ export const Leaderboard: React.FC = () => {
                   <div className="px-8 py-16 text-center">
                     <div className="text-3xl mb-4">👑</div>
                     <div className="text-retro-white font-body text-xl mb-3">
-                      No trades yet this round
+                      {systemActive ? 'No trades yet this round' : 'System is inactive'}
                     </div>
                     <div className="text-candle-green font-display text-base">
-                      Be the first to trade and claim the crown!
+                      {systemActive ? 'Be the first to trade and claim the crown!' : 'Waiting for admin to start the system'}
                     </div>
                   </div>
               ) : (
@@ -315,8 +350,8 @@ export const Leaderboard: React.FC = () => {
                                 <span className={`font-display text-xl ${
                                     isTopThree ? 'text-candle-green' : 'text-retro-white'
                                 }`}>
-                                  #{index + 1}
-                                </span>
+                            #{index + 1}
+                          </span>
                               </div>
                             </div>
 
@@ -347,9 +382,9 @@ export const Leaderboard: React.FC = () => {
                             {/* Trades */}
                             <div className="col-span-2 text-right">
                               <div className="pixel-box bg-retro-black px-4 py-2 inline-block">
-                                <span className="font-display text-candle-green text-base">
-                                  {entry.trades}
-                                </span>
+                          <span className="font-display text-candle-green text-base">
+                            {entry.trades}
+                          </span>
                               </div>
                             </div>
                           </div>
@@ -359,7 +394,6 @@ export const Leaderboard: React.FC = () => {
               )}
             </div>
           </motion.div>
-
 
           {/* Reward Pool Display */}
           <div className="mb-16">

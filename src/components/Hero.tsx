@@ -120,15 +120,6 @@ export const Hero: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Scroll Arrow */}
-        <motion.div
-            className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-        >
-          <div className="text-3xl text-candle-green">▼</div>
-        </motion.div>
       </section>
   );
 };
