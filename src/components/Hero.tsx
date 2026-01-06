@@ -124,10 +124,6 @@ export const Hero: React.FC = () => {
                                     className={`absolute inset-0 ${feature.bgColor} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}/>
 
                                 <div className="relative">
-                                    <div
-                                        className={`pixel-box ${feature.bgColor} p-3 w-16 h-16 mx-auto mb-3 flex items-center justify-center`}>
-                                        <feature.icon className="w-8 h-8 text-black" strokeWidth={2.5}/>
-                                    </div>
                                     <h3 className={`text-lg font-display ${feature.color} mb-2 uppercase text-shadow-retro text-center`}>
                                         {feature.title}
                                     </h3>
