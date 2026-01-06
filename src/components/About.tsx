@@ -1,43 +1,12 @@
 import React from 'react';
 import {motion} from 'framer-motion';
-import {Target, Coins, Flame, Wallet, TrendingUp, Award, Zap} from 'lucide-react';
+import {Target, TrendingUp, Award, Zap} from 'lucide-react';
 
 export const About: React.FC = () => {
-    const features = [
-        {
-            icon: Target,
-            title: 'Volume-Based',
-            description: 'The more you trade, the higher your chances. Pure meritocracy—skill and activity win.',
-            color: 'text-candle-green',
-            bgColor: 'bg-candle-green'
-        },
-        {
-            icon: Coins,
-            title: 'Winner Takes 15%',
-            description: 'Top trader receives 15% of the reward wallet funds. Your trading earns you real SOL rewards.',
-            color: 'text-yellow-400',
-            bgColor: 'bg-yellow-400'
-        },
-        {
-            icon: Wallet,
-            title: '70% Treasury',
-            description: 'Majority of fees go to treasury for protocol growth, development, and sustainability.',
-            color: 'text-blue-400',
-            bgColor: 'bg-blue-400'
-        },
-        {
-            icon: Flame,
-            title: '10% Buyback & Burn',
-            description: 'Every round, 10% of fees are used to buy back and burn $VOLK tokens forever.',
-            color: 'text-candle-red',
-            bgColor: 'bg-candle-red'
-        },
-    ];
-
     const cycle = [
-        {step: '1', text: 'Trade $VOLK on Pump.fun', icon: TrendingUp},
-        {step: '2', text: 'Volume tracked in real-time', icon: Target},
-        {step: '3', text: 'Timer hits zero every 15min', icon: Zap},
+        {step: '1', text: 'Trade $VOLK', icon: TrendingUp},
+        {step: '2', text: 'Volume tracked for each trader', icon: Target},
+        {step: '3', text: 'Timer runs out', icon: Zap},
         {step: '4', text: 'Top trader wins 15% reward', icon: Award},
     ];
 
@@ -53,65 +22,6 @@ export const About: React.FC = () => {
             <div className="absolute inset-0 retro-grid opacity-30"/>
 
             <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-                {/* Section Title */}
-                <motion.div
-                    initial={{opacity: 0, y: 20}}
-                    whileInView={{opacity: 1, y: 0}}
-                    viewport={{once: true}}
-                    className="text-center mb-16"
-                >
-                    <div className="inline-block pixel-box bg-pepe-green px-6 py-3 mb-4">
-                        <h2 className="text-3xl md:text-4xl font-display text-black uppercase">
-                            HOW IT WORKS
-                        </h2>
-                    </div>
-                    <p className="text-lg text-retro-white font-body max-w-3xl mx-auto">
-                        Simple competitive mechanism. <span className="text-candle-green">Trade to win.</span> Win to
-                        earn.
-                    </p>
-                </motion.div>
-
-                {/* Feature Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
-                    {features.map((feature, index) => (
-                        <motion.div
-                            key={feature.title}
-                            initial={{opacity: 0, y: 30}}
-                            whileInView={{opacity: 1, y: 0}}
-                            viewport={{once: true}}
-                            transition={{delay: index * 0.15}}
-                            whileHover={{y: -8, transition: {duration: 0.2}}}
-                            className="pixel-box p-6 bg-retro-gray-dark relative overflow-hidden group card-hover"
-                        >
-                            {/* Hover effect background */}
-                            <div
-                                className={`absolute inset-0 ${feature.bgColor} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}/>
-
-                            <div className="relative">
-                                <div
-                                    className={`pixel-box ${feature.bgColor} p-4 w-20 h-20 mx-auto mb-6 flex items-center justify-center`}>
-                                    <feature.icon className="w-10 h-10 text-black" strokeWidth={2.5}/>
-                                </div>
-                                <h3 className={`text-xl font-display ${feature.color} mb-4 uppercase text-shadow-retro text-center`}>
-                                    {feature.title}
-                                </h3>
-                                <p className="text-retro-white font-body text-base leading-relaxed text-center">
-                                    {feature.description}
-                                </p>
-                            </div>
-
-                            {/* Corner decorations */}
-                            <div
-                                className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-candle-green opacity-50"/>
-                            <div
-                                className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-candle-green opacity-50"/>
-                        </motion.div>
-                    ))}
-                </div>
-
-                {/* Section Divider */}
-                <div className="section-divider mb-20"/>
 
                 {/* The Volking Cycle */}
                 <motion.div
