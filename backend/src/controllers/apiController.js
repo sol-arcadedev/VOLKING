@@ -47,11 +47,13 @@ export function getHealth(roundState, getSystemActiveStatus) {
     };
 }
 
-export function getLeaderboard(roundState) {
+export function getLeaderboard(roundState, getSystemActiveStatus) {
     return (req, res) => {
+        const systemActive = getSystemActiveStatus ? getSystemActiveStatus() : true;
         const leaderboard = roundState.getLeaderboard(10);
 
         res.json({
+            systemActive,
             roundStart: roundState.currentRoundStart,
             nextRoundStart: getNextRoundStart(),
             roundNumber: roundState.roundNumber,
