@@ -23,7 +23,7 @@ export const TOKEN_CONFIG = {
 export const SOCIAL_LINKS = {
   twitter: 'https://x.com/i/communities/2007378539306230204',
   github: 'https://github.com/sol-arcadedev/VOLKING',
-  pumpfun: 'https://pump.fun/coin/ToBeAdded',
+  pumpfun: 'https://pump.fun/coin/2RKhBf8KBt7UmJjk5X38H6JMv8hQDLxsQEaRHur9pump',
 };
 
 export const NAVIGATION_LINKS = [

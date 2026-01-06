@@ -23,7 +23,7 @@ export const Hero: React.FC = () => {
                         </a>
                         <div className="pixel-box px-4 py-2 bg-retro-gray-dark">
                             <p className="text-sm font-body text-candle-green">
-                                CA: To be added
+                                CA: 2RKhBf8KBt7UmJjk5X38H6JMv8hQDLxsQEaRHur9pump
                             </p>
                         </div>
                     </div>
