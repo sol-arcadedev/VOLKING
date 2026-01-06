@@ -6,7 +6,7 @@ export const FEE_DISTRIBUTION = {
 };
 
 export const TIMING = {
-    ROUND_DURATION: 5 * 60 * 1000,
+    ROUND_DURATION: 2 * 60 * 1000,
     FEE_CLAIM_INTERVAL: 60 * 1000,
     CACHE_TTL: 15 * 60 * 1000,
     CACHE_CLEANUP_INTERVAL: 5 * 60 * 1000,
