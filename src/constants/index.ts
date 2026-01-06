@@ -1,5 +1,7 @@
 // Application constants
 
+import {CheckCircle, Clock, Trophy, Zap} from "lucide-react";
+
 export const TOKEN_CONFIG = {
   name: 'VOLKING',
   symbol: 'VOLK',
@@ -28,10 +30,40 @@ export const SOCIAL_LINKS = {
 
 export const NAVIGATION_LINKS = [
   { name: 'About', href: '#about' },
-  { name: 'Stats', href: '#global-stats' },
   { name: 'Leaderboard', href: '#leaderboard' },
   { name: 'Hall of Degens', href: '#hall-of-degens' },
   { name: 'Rewards', href: '#rewards' },
+];
+
+export const REWARD_FEATURES = [
+  {
+    icon: Trophy,
+    title: 'Winner Takes All',
+    description: 'The volume leader receives 15% of the reward wallet balance when the round ends. Pure skill-based rewards.',
+    color: 'text-candle-green',
+    bgColor: 'bg-candle-green'
+  },
+  {
+    icon: Clock,
+    title: 'Instant Distribution',
+    description: 'Rewards are distributed automatically within seconds of round completion. No waiting, no manual claims.',
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-400'
+  },
+  {
+    icon: CheckCircle,
+    title: 'Transparent & On-Chain',
+    description: 'All transactions are verifiable on Solscan. Everything is on-chain.',
+    color: 'text-yellow-400',
+    bgColor: 'bg-yellow-400'
+  },
+  {
+    icon: Zap,
+    title: 'Continuous Rounds',
+    description: 'New round starts after the last one ends. Always an opportunity to win and earn rewards.',
+    color: 'text-orange-500',
+    bgColor: 'bg-orange-500'
+  },
 ];
 
 export const FEATURES = [
@@ -46,23 +78,5 @@ export const FEATURES = [
   {
     title: 'Real-Time Tracking',
     description: 'Live leaderboard updates',
-  },
-];
-
-export const FEE_BREAKDOWN = [
-  {
-    label: 'Treasury',
-    percentage: 70,
-    description: 'Protocol treasury for development and growth',
-  },
-  {
-    label: 'Reward Wallet',
-    percentage: 20,
-    description: '15% to winner + 5% as next round start reward',
-  },
-  {
-    label: 'Buyback & Burn',
-    percentage: 10,
-    description: 'Buy back VOLK tokens and burn forever',
   },
 ];
