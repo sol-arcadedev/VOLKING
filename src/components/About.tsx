@@ -5,8 +5,8 @@ import {Target, TrendingUp, Award, Zap} from 'lucide-react';
 export const About: React.FC = () => {
     const cycle = [
         {step: '1', text: 'Trade $VOLK', icon: TrendingUp},
-        {step: '2', text: 'Volume tracked for each trader', icon: Target},
-        {step: '3', text: 'Timer runs out', icon: Zap},
+        {step: '2', text: 'Your Volume is tracked in real-time', icon: Target},
+        {step: '3', text: 'Timer hits zero', icon: Zap},
         {step: '4', text: 'Top trader wins 15% reward', icon: Award},
     ];
 
