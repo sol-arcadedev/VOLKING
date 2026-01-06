@@ -9,7 +9,7 @@ export function createAdminRoutes(
     systemControl
 ) {
     const router = express.Router();
-    router.get('/system-status', adminController.getSystemStatus(systemControl));
+    router.post('/system-status', requireAdmin, adminController.getSystemStatus(systemControl));
     router.post('/start-system', requireAdmin, adminController.startSystem(systemControl));
     router.post('/stop-system', requireAdmin, adminController.stopSystem(systemControl));
     router.post('/end-round', requireAdmin, adminController.endRound(roundState, startFeeClaimingInterval, stopFeeClaimingInterval));

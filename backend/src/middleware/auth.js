@@ -1,10 +1,11 @@
-
 import { ENV } from '../config/env.js';
 
 export function requireAdmin(req, res, next) {
-    const { adminKey } = req.body;
+    // Accept both 'password' (from frontend) and 'adminKey' for backwards compatibility
+    const { password, adminKey } = req.body;
+    const providedKey = password || adminKey;
 
-    if (adminKey !== ENV.ADMIN_KEY) {
+    if (providedKey !== ENV.ADMIN_KEY) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
