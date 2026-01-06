@@ -151,7 +151,7 @@ export const HallOfDegens: React.FC = () => {
                             <Crown className="w-8 h-8" />
                         </h2>
                     </div>
-                    <p className="text-lg text-retro-white font-body mb-6">
+                    <p className="text-xl sm:text-2xl text-retro-white font-body mb-6">
                         Legendary traders who conquered the <span className="text-candle-green">volume wars</span>
                     </p>
                     <div className="flex flex-wrap items-center justify-center gap-4 mb-6">
