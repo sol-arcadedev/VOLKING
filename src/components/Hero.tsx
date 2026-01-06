@@ -5,7 +5,7 @@ import {CYCLE, VOLKING_CYCLE_STEPS} from '../constants';
 
 export const Hero: React.FC = () => {
     return (
-        <section className="relative min-h-screen flex items-center justify-center pt-16 bg-retro-black">
+        <section id="hero" className="relative min-h-screen flex items-center justify-center pt-16 bg-retro-black">
             <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="text-center">
 
