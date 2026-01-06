@@ -4,7 +4,7 @@ import { Hero } from './components/Hero';
 import { About } from './components/About';
 import { Leaderboard } from './components/Leaderboard';
 import { HallOfDegens } from './components/HallOfDegens';
-import { GlobalStats } from './components/GlobalStats';
+// import { GlobalStats } from './components/GlobalStats';
 import { Rewards } from './components/Rewards';
 import { Footer } from './components/Footer';
 import './index.css';
@@ -18,7 +18,7 @@ const App: React.FC = () => {
                 <Leaderboard />
                 <Rewards />
                 <About />
-                <GlobalStats />
+                {/*<GlobalStats />*/}
                 <HallOfDegens />
             </main>
             <Footer />

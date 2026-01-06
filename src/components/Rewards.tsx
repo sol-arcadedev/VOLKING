@@ -65,14 +65,14 @@ export const Rewards: React.FC = () => {
     {
       icon: CheckCircle,
       title: 'Transparent & On-Chain',
-      description: 'All transactions are verifiable on Solscan. No hidden fees, no tricks. Everything is on-chain.',
+      description: 'All transactions are verifiable on Solscan. Everything is on-chain.',
       color: 'text-yellow-400',
       bgColor: 'bg-yellow-400'
     },
     {
       icon: Zap,
       title: 'Continuous Rounds',
-      description: 'New round starts immediately after the last one ends. Always an opportunity to win and earn rewards.',
+      description: 'New round starts after the last one ends. Always an opportunity to win and earn rewards.',
       color: 'text-orange-500',
       bgColor: 'bg-orange-500'
     },
@@ -104,7 +104,7 @@ export const Rewards: React.FC = () => {
               </h2>
             </div>
             <p className="text-lg text-retro-white font-body max-w-3xl mx-auto">
-              Compete for <span className="text-candle-green">real SOL rewards</span> every 15 minutes. The more you trade, the more you can earn.
+              Compete for <span className="text-candle-green">SOL rewards</span> every 15 minutes. Trade your way up and become the VOLKING.
             </p>
           </motion.div>
 
