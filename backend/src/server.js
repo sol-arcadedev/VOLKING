@@ -66,8 +66,13 @@ function startSystem() {
   // Initialize round start time
   roundState.currentRoundStart = getCurrentRoundStart();
 
-  // Start all intervals
-  startFeeClaimingInterval();
+  // Start intervals only if features are enabled
+  if (FEATURES.AUTO_CLAIM) {
+    startFeeClaimingInterval();
+  } else {
+    console.log('⏭️  Fee claiming disabled (ENABLE_AUTO_CLAIM=false)');
+  }
+
   startRoundTimer();
   startCacheCleanup();
 
