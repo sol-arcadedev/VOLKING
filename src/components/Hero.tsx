@@ -43,19 +43,19 @@ export const Hero: React.FC = () => {
                     </motion.div>
 
                     {/* Title */}
-                    <h2 className="text-3xl sm:text-4xl font-display text-candle-green text-shadow-retro mb-3 uppercase leading-tight">
+                    <h2 className="text-3xl sm:text-4xl font-display text-candle-green text-shadow-retro mb-6 uppercase leading-tight">
                         RULE THE
                         <br/>
                         VOLUME
                     </h2>
 
-                    <p className="text-lg text-retro-white font-body leading-relaxed mb-2">
+                    <p className="text-xl sm:text-2xl text-retro-white font-body leading-relaxed mb-3 max-w-4xl mx-auto">
                         VOLKING is the ultimate volume-based reward token! Every Round, the trader who generates
                         the <span className="text-candle-green font-bold">highest volume</span> becomes the VOLKING and
                         receives the prize pool.
                     </p>
 
-                    <p className="text-lg font-body text-retro-white mb-4">
+                    <p className="text-xl sm:text-2xl font-body text-retro-white mb-6">
                         TRADE. COMPETE. WIN.
                     </p>
 
