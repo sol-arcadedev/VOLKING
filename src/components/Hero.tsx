@@ -65,7 +65,6 @@ export const Hero: React.FC = () => {
                         initial={{opacity: 0, y: 30}}
                         whileInView={{opacity: 1, y: 0}}
                         viewport={{once: true}}
-                        className="mb-6"
                     >
                         <div className="text-center mb-4">
                             <h3 className="text-2xl md:text-3xl font-display text-candle-green uppercase text-shadow-retro mb-2">
@@ -73,72 +72,66 @@ export const Hero: React.FC = () => {
                             </h3>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                            {CYCLE.map((item, index) => (
-                                <motion.div
-                                    key={item.step}
-                                    initial={{opacity: 0, scale: 0.9}}
-                                    whileInView={{opacity: 1, scale: 1}}
-                                    viewport={{once: true}}
-                                    transition={{delay: index * 0.1}}
-                                    className="relative"
-                                >
-                                    <div className="text-center">
-                                        <div
-                                            className="pixel-box bg-candle-green p-3 mb-2 relative group hover:shadow-retro-lg transition-all">
-                                            <div className="text-3xl font-display text-black text-shadow-retro mb-1">
-                                                {item.step}
-                                            </div>
-                                            <item.icon className="w-7 h-7 text-black mx-auto" strokeWidth={2.5}/>
-                                        </div>
-                                        <p className="text-retro-white font-body text-sm leading-snug px-1">
-                                            {item.text}
-                                        </p>
-                                    </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {CYCLE.map((item, index) => {
+                                const feature = REWARD_FEATURES[index];
+                                return (
+                                    <motion.div
+                                        key={item.step}
+                                        initial={{opacity: 0, scale: 0.9}}
+                                        whileInView={{opacity: 1, scale: 1}}
+                                        viewport={{once: true}}
+                                        transition={{delay: index * 0.1}}
+                                        whileHover={{y: -8, transition: {duration: 0.2}}}
+                                        className="relative"
+                                    >
+                                        <div className="pixel-box p-4 bg-retro-gray-dark relative overflow-hidden group card-hover h-full">
+                                            <div
+                                                className={`absolute inset-0 ${feature.bgColor} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}/>
 
-                                    {/* Arrow connector */}
-                                    {index < CYCLE.length - 1 && (
-                                        <div
-                                            className="hidden lg:block absolute top-1/2 -right-3 transform -translate-y-1/2 text-candle-green text-2xl font-display">
-                                            ►
+                                            <div className="relative">
+                                                {/* Step number and icon */}
+                                                <div className="flex items-center justify-center gap-2 mb-3">
+                                                    <div className="text-3xl font-display text-candle-green text-shadow-retro">
+                                                        {item.step}
+                                                    </div>
+                                                    <item.icon className="w-7 h-7 text-candle-green" strokeWidth={2.5}/>
+                                                </div>
+
+                                                {/* Step description */}
+                                                <p className="text-retro-white font-body text-sm leading-snug mb-3 text-center">
+                                                    {item.text}
+                                                </p>
+
+                                                {/* Reward feature title */}
+                                                <h3 className={`text-base font-display ${feature.color} mb-2 uppercase text-shadow-retro text-center`}>
+                                                    {feature.title}
+                                                </h3>
+
+                                                {/* Reward feature description */}
+                                                <p className="text-retro-white font-body text-xs leading-relaxed text-center opacity-90">
+                                                    {feature.description}
+                                                </p>
+                                            </div>
+
+                                            <div
+                                                className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-candle-green opacity-50"/>
+                                            <div
+                                                className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-candle-green opacity-50"/>
                                         </div>
-                                    )}
-                                </motion.div>
-                            ))}
+
+                                        {/* Arrow connector */}
+                                        {index < CYCLE.length - 1 && (
+                                            <div
+                                                className="hidden lg:block absolute top-1/2 -right-2 transform -translate-y-1/2 text-candle-green text-2xl font-display z-10">
+                                                ►
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                );
+                            })}
                         </div>
                     </motion.div>
-
-                    {/* Reward Features */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {REWARD_FEATURES.map((feature, index) => (
-                            <motion.div
-                                key={feature.title}
-                                initial={{opacity: 0, y: 30}}
-                                whileInView={{opacity: 1, y: 0}}
-                                viewport={{once: true}}
-                                transition={{delay: index * 0.1}}
-                                whileHover={{y: -8, transition: {duration: 0.2}}}
-                                className="pixel-box p-4 bg-retro-gray-dark relative overflow-hidden group card-hover"
-                            >
-                                <div
-                                    className={`absolute inset-0 ${feature.bgColor} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}/>
-
-                                <div className="relative">
-                                    <h3 className={`text-lg font-display ${feature.color} mb-2 uppercase text-shadow-retro text-center`}>
-                                        {feature.title}
-                                    </h3>
-                                    <p className="text-retro-white font-body text-sm leading-relaxed text-center">
-                                        {feature.description}
-                                    </p>
-                                </div>
-
-                                <div
-                                    className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-candle-green opacity-50"/>
-                                <div
-                                    className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-candle-green opacity-50"/>
-                            </motion.div>
-                        ))}
-                    </div>
 
                 </div>
             </div>
