@@ -51,7 +51,11 @@ export default function AdminControlPanel() {
 
     const fetchSystemStatus = async () => {
         try {
-            const response = await fetch(`${API_URL}/api/admin/system-status`);
+            const response = await fetch(`${API_URL}/api/admin/system-status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: adminPassword })
+            });
             const data = await response.json();
             setSystemStatus(data.status);
         } catch (error) {
