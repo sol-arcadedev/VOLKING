@@ -17,7 +17,7 @@ export const About: React.FC = () => {
     ];
 
     return (
-        <section id="about" className="py-32 bg-retro-black relative overflow-hidden">
+        <section id="about" className="py-16 bg-retro-black relative overflow-hidden">
             {/* Background elements */}
             <div className="absolute inset-0 retro-grid opacity-30"/>
 
