@@ -4,7 +4,7 @@ export const TOKEN_CONFIG = {
   name: 'VOLKING',
   symbol: 'VOLK',
   description: 'The ultimate volume-based reward token on Pump.fun',
-  roundDuration: 5, // minutes
+  roundDuration: 15, // minutes
 
   // Fee Distribution (per requirements)
   treasuryPercentage: 70,      // 70% to treasury wallet
@@ -16,7 +16,7 @@ export const TOKEN_CONFIG = {
   startRewardPercentage: 5,    // 5% as start reward for next round
 
   // Initial Values
-  initialStartReward: 0.2,     // 0.2 SOL start reward for first round
+  initialStartReward: 0.05,     // 0.2 SOL start reward for first round
   minSolForFees: 0.02,         // Always leave 0.02 SOL for transaction fees
 };
 
@@ -27,10 +27,8 @@ export const SOCIAL_LINKS = {
 };
 
 export const NAVIGATION_LINKS = [
-  { name: 'About', href: '#about' },
   { name: 'Leaderboard', href: '#leaderboard' },
   { name: 'Hall of Degens', href: '#hall-of-degens' },
-  { name: 'Rewards', href: '#rewards' },
 ];
 
 export const VOLKING_CYCLE_STEPS = [

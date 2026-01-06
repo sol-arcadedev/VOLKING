@@ -31,29 +31,6 @@ export interface VolumeData {
 }
 
 /**
- * Get current round start time (last 15-minute mark)
- */
-export function getCurrentRoundStart(): number {
-  const now = new Date();
-  const minutes = now.getMinutes();
-  const roundStart = Math.floor(minutes / 15) * 15;
-
-  now.setMinutes(roundStart);
-  now.setSeconds(0);
-  now.setMilliseconds(0);
-
-  return now.getTime();
-}
-
-/**
- * Get next round start time
- */
-export function getNextRoundStart(): number {
-  const currentRoundStart = getCurrentRoundStart();
-  return currentRoundStart + (15 * 60 * 1000); // Add 15 minutes
-}
-
-/**
  * Get token transactions for a specific time period
  * Uses Helius API for better performance if available
  */
@@ -272,13 +249,4 @@ function updateVolumeMap(volumeMap: Map<string, VolumeData>, tx: Transaction): v
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-/**
- * Get volume leaderboard for current round (last 15 minutes)
- */
-export async function getCurrentRoundLeaderboard(): Promise<VolumeData[]> {
-  const startTime = getCurrentRoundStart();
-  const endTime = Date.now();
-  return calculateVolumeLeaderboard(startTime, endTime);
 }
