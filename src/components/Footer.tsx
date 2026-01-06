@@ -4,6 +4,19 @@ import { Twitter, Github, ExternalLink } from 'lucide-react';
 import { TOKEN_CONFIG, NAVIGATION_LINKS, SOCIAL_LINKS } from '../constants';
 
 export const Footer: React.FC = () => {
+  // Filter out "Reward" from navigation links
+  const filteredLinks = NAVIGATION_LINKS.filter(link =>
+      link.name.toLowerCase() !== 'reward' && link.name.toLowerCase() !== 'rewards'
+  );
+
+  // Update About link to jump to hero section
+  const updatedLinks = filteredLinks.map(link => {
+    if (link.name.toLowerCase() === 'about') {
+      return { ...link, href: '#hero' };
+    }
+    return link;
+  });
+
   return (
       <footer className="bg-retro-black border-t-4 border-candle-green py-16 relative overflow-hidden">
         <div className="absolute inset-0 retro-grid opacity-10" />
@@ -46,7 +59,7 @@ export const Footer: React.FC = () => {
                 Quick Links
               </h4>
               <ul className="space-y-3">
-                {NAVIGATION_LINKS.map((link) => (
+                {updatedLinks.map((link) => (
                     <FooterLink key={link.name} href={link.href}>
                       {link.name}
                     </FooterLink>

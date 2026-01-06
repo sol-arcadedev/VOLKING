@@ -222,9 +222,6 @@ export const HallOfDegens: React.FC = () => {
                     ))}
                 </motion.div>
 
-                {/* Section Divider */}
-                <div className="section-divider mb-16" />
-
                 {/* Hall of Degens Table */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -337,9 +334,6 @@ export const HallOfDegens: React.FC = () => {
                     </div>
                 </motion.div>
 
-                {/* Section Divider */}
-                <div className="section-divider mb-16" />
-
                 {/* Recent Transactions */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -347,13 +341,12 @@ export const HallOfDegens: React.FC = () => {
                     viewport={{ once: true }}
                     className="mb-16"
                 >
-                    <div className="text-center mb-10">
-                        <div className="inline-block pixel-box bg-pepe-green px-6 py-3 mb-4">
-                            <h3 className="text-3xl font-display text-black uppercase flex items-center gap-3">
-                                <DollarSign className="w-8 h-8" />
-                                LAST 50 REWARD TRANSACTIONS
-                            </h3>
-                        </div>
+                    <div className="inline-block pixel-box-pepe px-6 py-3 mb-4">
+                        <h2 className="text-3xl md:text-4xl font-display text-black uppercase flex items-center gap-3">
+                            <Crown className="w-8 h-8" />
+                            LAST 50 REWARD TRANSACTIONS
+                            <Crown className="w-8 h-8" />
+                        </h2>
                     </div>
 
                     <div className="pixel-box bg-retro-gray-dark">
