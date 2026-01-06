@@ -1,7 +1,7 @@
 import React from 'react';
 import {motion} from 'framer-motion';
 import {Github} from 'lucide-react';
-import {CYCLE, REWARD_FEATURES} from '../constants';
+import {CYCLE, VOLKING_CYCLE_STEPS} from '../constants';
 
 export const Hero: React.FC = () => {
     return (
@@ -51,9 +51,9 @@ export const Hero: React.FC = () => {
                     </h2>
 
                     <p className="text-lg text-retro-white font-body leading-relaxed mb-2">
-                        VOLKING is the ultimate volume-based reward token! Every 15 minutes, the trader who generates
+                        VOLKING is the ultimate volume-based reward token! Every Round, the trader who generates
                         the <span className="text-candle-green font-bold">highest volume</span> becomes the VOLKING and
-                        claims the prize pool.
+                        receives the prize pool.
                     </p>
 
                     <p className="text-lg font-body text-retro-white mb-4">
@@ -74,7 +74,7 @@ export const Hero: React.FC = () => {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             {CYCLE.map((item, index) => {
-                                const feature = REWARD_FEATURES[index];
+                                const feature = VOLKING_CYCLE_STEPS[index];
                                 return (
                                     <motion.div
                                         key={item.step}
@@ -90,12 +90,11 @@ export const Hero: React.FC = () => {
                                                 className={`absolute inset-0 ${feature.bgColor} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}/>
 
                                             <div className="relative">
-                                                {/* Step number and icon */}
+                                                {/* Step number */}
                                                 <div className="flex items-center justify-center gap-2 mb-3">
                                                     <div className="text-3xl font-display text-candle-green text-shadow-retro">
                                                         {item.step}
                                                     </div>
-                                                    <item.icon className="w-7 h-7 text-candle-green" strokeWidth={2.5}/>
                                                 </div>
 
                                                 {/* Step description */}

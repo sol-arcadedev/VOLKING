@@ -1,7 +1,7 @@
 import React from 'react';
 import {motion} from 'framer-motion';
 
-export const About: React.FC = () => {
+export const CreatorFeeDistribution: React.FC = () => {
 
     const feeDistribution = [
         {label: 'Treasury', percentage: 70, color: 'bg-candle-green'},

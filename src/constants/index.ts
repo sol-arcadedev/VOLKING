@@ -1,7 +1,5 @@
 // Application constants
 
-import {Award, Target, TrendingUp, Zap} from "lucide-react";
-
 export const TOKEN_CONFIG = {
   name: 'VOLKING',
   symbol: 'VOLK',
@@ -35,51 +33,40 @@ export const NAVIGATION_LINKS = [
   { name: 'Rewards', href: '#rewards' },
 ];
 
-export const REWARD_FEATURES = [
+export const VOLKING_CYCLE_STEPS = [
   {
-    title: 'Winner Takes All',
-    description: 'The volume leader receives 15% of the reward wallet balance when the round ends.',
+    title: 'Round Starts',
+    description:
+        'A new round begins and the timer starts. All trader volume during this period is tracked separately.',
     color: 'text-candle-green',
-    bgColor: 'bg-candle-green'
+    bgColor: 'bg-candle-green',
   },
   {
-    title: 'Instant Distribution',
-    description: 'Rewards are distributed automatically within seconds of round completion. No waiting, no manual claims.',
+    title: 'Fees Accumulate',
+    description:
+        'On every trade, creator fees are collected. 20% of these fees are allocated to the VolKing reward pool.',
     color: 'text-blue-400',
-    bgColor: 'bg-blue-400'
+    bgColor: 'bg-blue-400',
   },
   {
-    title: 'Transparent & On-Chain',
-    description: 'All transactions are verifiable on Solscan. Everything is on-chain.',
+    title: 'Winner Paid Automatically',
+    description:
+        'When the timer ends, the trader with the highest volume receives 15% of the round’s fees plus the carried base reward. The reward is sent automatically and the signature is shared.',
     color: 'text-yellow-400',
-    bgColor: 'bg-yellow-400'
+    bgColor: 'bg-yellow-400',
   },
   {
-    title: 'Continuous Rounds',
-    description: 'New round starts after the last one ends. Always an opportunity to win and earn rewards.',
+    title: 'Next Round Seeded',
+    description:
+        'The remaining 5% of fees becomes the base reward for the next round, which starts immediately—new chance to win every cycle.',
     color: 'text-orange-500',
-    bgColor: 'bg-orange-500'
+    bgColor: 'bg-orange-500',
   },
 ];
 
-export const FEATURES = [
-  {
-    title: '15-Min Rounds',
-    description: 'New winner every quarter hour',
-  },
-  {
-    title: 'Volume Rewards',
-    description: 'Top trader wins 15% of reward pool',
-  },
-  {
-    title: 'Real-Time Tracking',
-    description: 'Live leaderboard updates',
-  },
-]
-
 export const CYCLE = [
-  {step: '1', text: 'Trade $VOLK', icon: TrendingUp},
-  {step: '2', text: 'Volume tracked live', icon: Target}, // Shortened text for compact layout
-  {step: '3', text: 'Timer hits zero', icon: Zap},
-  {step: '4', text: 'Top trader wins 15%', icon: Award}, // Shortened text
+  {step: '1', text: 'Trade $VOLK'},
+  {step: '2', text: 'Volume tracked live'},
+  {step: '3', text: 'Timer hits zero'},
+  {step: '4', text: 'Top trader wins 15%'},
 ];

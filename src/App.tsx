@@ -1,7 +1,7 @@
 import React from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
-import { About } from './components/About';
+import { CreatorFeeDistribution } from './components/CreatorFeeDistribution.tsx';
 import { Leaderboard } from './components/Leaderboard';
 import { HallOfDegens } from './components/HallOfDegens';
 // import { GlobalStats } from './components/GlobalStats';
@@ -17,9 +17,9 @@ const App: React.FC = () => {
                 <Hero />
                 <Leaderboard />
                 {/*<Rewards />*/}
-                <About />
                 {/*<GlobalStats />*/}
                 <HallOfDegens />
+                <CreatorFeeDistribution />
             </main>
             <Footer />
         </div>
