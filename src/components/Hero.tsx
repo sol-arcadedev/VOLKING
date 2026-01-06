@@ -50,16 +50,15 @@ export const Hero: React.FC = () => {
                         VOLUME
                     </h2>
 
-                    <p className="text-xl font-body text-retro-white mb-3">
-                        TRADE. COMPETE. WIN.
-                    </p>
-
                     <p className="text-xl text-retro-white font-body text-base leading-relaxed mb-4">
                         VOLKING is the ultimate volume-based reward token! Every 15 minutes, the trader who generates
                         the <span className="text-candle-green font-bold">highest volume</span> becomes the VOLKING and
-                        claims the prize pool. It's simple: trade smart, and claim your throne!
+                        claims the prize pool.
                     </p>
 
+                    <p className="text-xl font-body text-retro-white mb-3">
+                        TRADE. COMPETE. WIN.
+                    </p>
 
                     {/* The Volking Cycle */}
                     <motion.div
