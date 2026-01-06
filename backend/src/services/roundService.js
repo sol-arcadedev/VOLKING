@@ -1,10 +1,8 @@
-
 import * as db from './database.js';
 import { claimCreatorFeesViaPumpPortal } from './feeService.js';
 import { distributeFees } from './distributionService.js';
 import { calculateCurrentReward, sendRewardToWinner } from './rewardService.js';
 import { executeBuybackAndBurn } from './buybackService.js';
-import { getCurrentRoundStart } from './solana.js';
 import { FEATURES } from '../config/features.js';
 import { FEE_DISTRIBUTION } from '../config/constants.js';
 
@@ -48,7 +46,23 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
 
         if (FEATURES.FEE_COLLECTION && roundState.claimedCreatorFees > 0) {
             console.log('\n📤 Distributing fees...');
-            await distributeFees(roundState.claimedCreatorFees);
+            const distribution = await distributeFees(roundState.claimedCreatorFees);
+
+            if (!distribution || !distribution.success) {
+                console.log('❌ Fee distribution failed - round cannot complete');
+                console.log('   Reason:', distribution?.error || 'Unknown error');
+                console.log('⚠️  ROUND PAUSED - Admin must verify transactions and manually start next round');
+                return {
+                    error: 'Fee distribution failed',
+                    distribution,
+                    nextBaseReward: fivePercentOfFees,
+                };
+            }
+
+            console.log('⏳ Waiting for distribution transactions to confirm...');
+            await new Promise(resolve => setTimeout(resolve, 5000));
+
+            console.log('✅ Fee distribution confirmed on-chain');
         }
 
         roundState.baseReward = fivePercentOfFees;
@@ -65,10 +79,17 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
         });
 
         roundState.resetForNewRound(false);
-        roundState.roundInProgress = true;
-        roundState.currentRoundStart = getCurrentRoundStart();
-        startFeeClaimingInterval();
-        return null;
+
+        console.log('\n✅ Round complete - Ready to start next round');
+        console.log('⚠️  Next round will NOT start automatically');
+        console.log('📌 Admin must manually start next round after verifying all transactions');
+
+        return {
+            success: true,
+            noWinner: true,
+            nextBaseReward: roundState.baseReward,
+            readyForNextRound: true,
+        };
     }
 
     console.log(`\n🏆 Winner: ${winner.wallet.substring(0, 8)}...`);
@@ -83,7 +104,21 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
         if (!distribution || !distribution.success) {
             console.log('❌ Fee distribution failed - round cannot complete properly');
             console.log('   Reason:', distribution?.error || 'Unknown error');
+            console.log('⚠️  ROUND PAUSED - Admin must verify transactions and manually start next round');
+            return {
+                error: 'Fee distribution failed',
+                winner: winner.wallet,
+                winnerVolume: winner.volume,
+                winnerReward,
+                distribution,
+                nextBaseReward: fivePercentOfFees,
+            };
         }
+
+        console.log('⏳ Waiting for distribution transactions to confirm...');
+        await new Promise(resolve => setTimeout(resolve, 5000));
+
+        console.log('✅ Fee distribution confirmed on-chain');
     }
 
     let rewardSignature = null;
@@ -94,7 +129,7 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
         if (rewardResult.success && rewardResult.signature) {
             rewardSignature = rewardResult.signature;
             console.log(`   ✅ Reward sent on-chain!`);
-            console.log(`   🔍 Transaction: ${rewardSignature}`);
+            console.log(`   🔗 Transaction: ${rewardSignature}`);
         } else {
             console.log(`   ❌ Reward NOT sent on-chain!`);
             console.log(`   Reason: ${rewardResult.error || 'Unknown error'}`);
@@ -104,6 +139,7 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
     if (!rewardSignature) {
         console.log('\n❌ Cannot record winner without valid reward signature');
         console.log('   Please manually send reward and update database');
+        console.log('⚠️  ROUND PAUSED - Admin must verify transactions and manually start next round');
 
         roundState.baseReward = fivePercentOfFees;
         roundState.totalRoundsCompleted++;
@@ -119,9 +155,6 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
         });
 
         roundState.resetForNewRound(true);
-        roundState.roundInProgress = true;
-        roundState.currentRoundStart = getCurrentRoundStart();
-        startFeeClaimingInterval();
 
         return {
             error: 'Reward not sent',
@@ -153,9 +186,9 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
             roundState.totalSupplyBurned += burnResult.tokensBurned;
 
             console.log(`   ✅ Buyback & burn complete!`);
-            console.log(`   🔍 Swap signature: ${burnResult.swapSignature}`);
+            console.log(`   🔗 Swap signature: ${burnResult.swapSignature}`);
             if (burnResult.burnSignature) {
-                console.log(`   🔍 Burn signature: ${burnResult.burnSignature}`);
+                console.log(`   🔗 Burn signature: ${burnResult.burnSignature}`);
             }
         } else {
             console.log(`   ❌ Buyback & burn failed: ${burnResult.error || 'Unknown error'}`);
@@ -202,18 +235,19 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
 
     console.log(`\n✅ Round ${roundState.roundNumber - 1} complete!`);
     console.log(`   Winner reward sent: ${winnerReward.toFixed(4)} SOL`);
-    console.log(`   🔍 Reward signature: ${rewardSignature}`);
+    console.log(`   🔗 Reward signature: ${rewardSignature}`);
     console.log(`   Next round base reward: ${roundState.baseReward.toFixed(4)} SOL`);
     if (burnResult.success) {
         console.log(`   Tokens burned: ${burnResult.tokensBurned.toLocaleString()}`);
     }
 
     roundState.resetForNewRound(true);
-    roundState.roundInProgress = true;
-    roundState.currentRoundStart = Date.now();
-    startFeeClaimingInterval();
+
+    console.log('\n⚠️  Next round will NOT start automatically');
+    console.log('📌 Admin must manually start next round after verifying all transactions');
 
     return {
+        success: true,
         winner: winner.wallet,
         winnerVolume: winner.volume,
         winnerReward,
@@ -221,5 +255,6 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
         distribution,
         burnResult,
         nextBaseReward: roundState.baseReward,
+        readyForNextRound: true,
     };
 }
