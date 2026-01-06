@@ -1,8 +1,6 @@
-
-import { getNextRoundStart } from '../services/solana.js';
 import { calculateCurrentReward } from '../services/rewardService.js';
 import * as db from '../services/database.js';
-import { FEE_DISTRIBUTION } from '../config/constants.js';
+import { FEE_DISTRIBUTION, TIMING } from '../config/constants.js';
 
 export function getHealth(roundState, getSystemActiveStatus) {
     return async (req, res) => {
@@ -52,10 +50,13 @@ export function getLeaderboard(roundState, getSystemActiveStatus) {
         const systemActive = getSystemActiveStatus ? getSystemActiveStatus() : true;
         const leaderboard = roundState.getLeaderboard(10);
 
+        // Calculate next round start based on current round start + configured duration
+        const nextRoundStart = roundState.currentRoundStart + TIMING.ROUND_DURATION;
+
         res.json({
             systemActive,
             roundStart: roundState.currentRoundStart,
-            nextRoundStart: getNextRoundStart(),
+            nextRoundStart: nextRoundStart,
             roundNumber: roundState.roundNumber,
             leaderboard,
             totalTraders: roundState.volumeData.size,
@@ -70,6 +71,9 @@ export function getRewardPool(roundState) {
         const fivePercentOfFees = roundState.claimedCreatorFees * FEE_DISTRIBUTION.NEXT_ROUND_BASE;
         const totalCurrentReward = calculateCurrentReward(roundState.baseReward, roundState.claimedCreatorFees);
 
+        // Calculate next round start based on current round start + configured duration
+        const nextRoundStart = roundState.currentRoundStart + TIMING.ROUND_DURATION;
+
         res.json({
             claimedCreatorFees: roundState.claimedCreatorFees,
             fifteenPercentOfFees,
@@ -79,7 +83,7 @@ export function getRewardPool(roundState) {
             totalRewardsPaid: roundState.totalRewardsPaid,
             totalSupplyBurned: roundState.totalSupplyBurned,
             roundStart: roundState.currentRoundStart,
-            nextRoundStart: getNextRoundStart(),
+            nextRoundStart: nextRoundStart,
             roundNumber: roundState.roundNumber,
             roundInProgress: roundState.roundInProgress,
             treasuryPercentage: FEE_DISTRIBUTION.TREASURY,
