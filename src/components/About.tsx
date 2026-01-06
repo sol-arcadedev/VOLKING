@@ -203,7 +203,7 @@ export const About: React.FC = () => {
                         <div className="pixel-box bg-retro-black p-6 text-center">
                             <div className="flex items-center justify-center space-x-3 mb-3">
                                 <div className="w-6 h-6 bg-candle-green border-2 border-black"/>
-                                <span className="text-candle-green font-display text-base">TREASURY (70%)</span>
+                                <span className="text-candle-green font-display text-base">Project Funding (70%)</span>
                             </div>
                             <p className="text-retro-white font-body text-sm leading-relaxed">
                                 Project growth, development, maintenance, marketing and for additional community rewards
@@ -229,32 +229,6 @@ export const About: React.FC = () => {
                                 Deflationary mechanism - tokens burned forever
                             </p>
                         </div>
-                    </div>
-
-                    {/* Reward Wallet Breakdown */}
-                    <div className="mt-10 pixel-box bg-candle-green bg-opacity-15 p-6 border-candle-green">
-                        <h4 className="text-2xl font-display text-candle-green text-center mb-6 uppercase">
-                            🎯 REWARD WALLET BREAKDOWN (20% of fees)
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="pixel-box bg-retro-black p-6">
-                                <div className="text-4xl font-display text-candle-green mb-3 text-center">15%</div>
-                                <p className="text-retro-white font-body text-base text-center">
-                                    Sent to the Volume King (winner)
-                                </p>
-                            </div>
-                            <div className="pixel-box bg-retro-black p-6">
-                                <div className="text-4xl font-display text-candle-green mb-3 text-center">5%</div>
-                                <p className="text-retro-white font-body text-base text-center">
-                                    Used as start reward for next round
-                                </p>
-                            </div>
-                        </div>
-                        <p className="text-center text-retro-white font-body text-sm mt-6 opacity-80">
-                            💡 The reward pool allocation, as well as the buyback and burn mechanisms, will increase as
-                            the market cap grows. Once $VOLK has stabilized and gained widespread acceptance, a portion
-                            of the fees will be additionally allocated to donations supporting good causes.
-                        </p>
                     </div>
                 </motion.div>
             </div>
