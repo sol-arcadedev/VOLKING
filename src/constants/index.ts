@@ -65,8 +65,8 @@ export const VOLKING_CYCLE_STEPS = [
 ];
 
 export const CYCLE = [
-  {step: '1', text: 'Trade $VOLK'},
-  {step: '2', text: 'Volume tracked live'},
-  {step: '3', text: 'Timer hits zero'},
-  {step: '4', text: 'Top trader wins 15%'},
+  {step: '1'},
+  {step: '2'},
+  {step: '3'},
+  {step: '4'},
 ];

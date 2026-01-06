@@ -9,18 +9,19 @@ export const Hero: React.FC = () => {
             <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="text-center">
 
-                    {/* GitHub Transparency Link */}
-                    <div className="flex items-center justify-center gap-3 mb-4">
+                    {/* GitHub Link and Contract Address - Same Line */}
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 mb-6">
                         <a
                             href="https://github.com/sol-arcadedev/VOLKING"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-retro-white hover:text-candle-green transition-colors"
+                            className="flex items-center gap-2 text-retro-white hover:text-candle-green transition-colors text-sm"
                         >
-                            <Github className="w-5 h-5"/>
+                            <Github className="w-4 h-4"/>
+                            <span>Full transparency - View code</span>
                         </a>
-                        <p className="text-sm font-body text-retro-white">
-                            Full transparency if you would like to see the code behind the implementation.
+                        <p className="text-sm font-body text-candle-green">
+                            CA: To be added
                         </p>
                     </div>
 
@@ -96,11 +97,6 @@ export const Hero: React.FC = () => {
                                                         {item.step}
                                                     </div>
                                                 </div>
-
-                                                {/* Step description */}
-                                                <p className="text-retro-white font-body text-sm leading-snug mb-3 text-center">
-                                                    {item.text}
-                                                </p>
 
                                                 {/* Reward feature title */}
                                                 <h3 className={`text-base font-display ${feature.color} mb-2 uppercase text-shadow-retro text-center`}>
