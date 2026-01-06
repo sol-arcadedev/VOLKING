@@ -63,8 +63,9 @@ function startSystem() {
   console.log('🟢 STARTING SYSTEM - All automated logic will now run');
   systemActive = true;
 
-  // Initialize round start time
-  roundState.currentRoundStart = getCurrentRoundStart();
+  // ✅ Use actual current time, not blockchain interval time
+  roundState.currentRoundStart = Date.now();
+  roundState.roundInProgress = true; // ✅ Ensure round is marked as in progress
 
   // Start all intervals
   startFeeClaimingInterval();
@@ -74,12 +75,14 @@ function startSystem() {
   console.log('✅ System started successfully');
   console.log(`📊 Current round: ${roundState.roundNumber}`);
   console.log(`💰 Base reward: ${roundState.baseReward.toFixed(4)} SOL`);
+  console.log(`⏰ Round started at: ${new Date(roundState.currentRoundStart).toLocaleTimeString()}`);
 
   return {
     success: true,
     message: 'System started successfully',
     roundNumber: roundState.roundNumber,
-    baseReward: roundState.baseReward
+    baseReward: roundState.baseReward,
+    roundStartTime: roundState.currentRoundStart
   };
 }
 

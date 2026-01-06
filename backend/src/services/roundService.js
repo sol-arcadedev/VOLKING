@@ -210,7 +210,7 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
 
     roundState.resetForNewRound(true);
     roundState.roundInProgress = true;
-    roundState.currentRoundStart = getCurrentRoundStart();
+    roundState.currentRoundStart = Date.now();
     startFeeClaimingInterval();
 
     return {
