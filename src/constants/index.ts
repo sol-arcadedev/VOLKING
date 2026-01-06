@@ -1,6 +1,6 @@
 // Application constants
 
-import {CheckCircle, Clock, Trophy, Zap} from "lucide-react";
+import {Award, CheckCircle, Clock, Target, TrendingUp, Trophy, Zap} from "lucide-react";
 
 export const TOKEN_CONFIG = {
   name: 'VOLKING',
@@ -39,7 +39,7 @@ export const REWARD_FEATURES = [
   {
     icon: Trophy,
     title: 'Winner Takes All',
-    description: 'The volume leader receives 15% of the reward wallet balance when the round ends. Pure skill-based rewards.',
+    description: 'The volume leader receives 15% of the reward wallet balance when the round ends.',
     color: 'text-candle-green',
     bgColor: 'bg-candle-green'
   },
@@ -79,4 +79,11 @@ export const FEATURES = [
     title: 'Real-Time Tracking',
     description: 'Live leaderboard updates',
   },
+]
+
+export const CYCLE = [
+  {step: '1', text: 'Trade $VOLK', icon: TrendingUp},
+  {step: '2', text: 'Volume tracked live', icon: Target}, // Shortened text for compact layout
+  {step: '3', text: 'Timer hits zero', icon: Zap},
+  {step: '4', text: 'Top trader wins 15%', icon: Award}, // Shortened text
 ];

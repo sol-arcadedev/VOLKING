@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Github } from 'lucide-react';
-import {REWARD_FEATURES} from '../constants';
+import {CYCLE, REWARD_FEATURES} from '../constants';
 
 export const Hero: React.FC = () => {
   return (
@@ -125,6 +125,60 @@ export const Hero: React.FC = () => {
                   </motion.div>
               ))}
             </div>
+
+            {/* The Volking Cycle */}
+            <motion.div
+                initial={{opacity: 0, y: 30}}
+                whileInView={{opacity: 1, y: 0}}
+                viewport={{once: true}}
+                className="mb-10"
+            >
+              <div className="text-center mb-6">
+                <h3 className="text-3xl md:text-4xl font-display text-candle-green uppercase text-shadow-retro mb-2">
+                  THE VOLKING CYCLE
+                </h3>
+                <p className="text-lg text-retro-white font-body">
+                  Every 15 minutes, a new opportunity to become king
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {CYCLE.map((item, index) => (
+                    <motion.div
+                        key={item.step}
+                        initial={{opacity: 0, scale: 0.9}}
+                        whileInView={{opacity: 1, scale: 1}}
+                        viewport={{once: true}}
+                        transition={{delay: index * 0.1}}
+                        className="relative"
+                    >
+                      <div className="text-center">
+                        {/* COMPACT BOX: Reduced padding (p-4), margin (mb-3) */}
+                        <div
+                            className="pixel-box bg-candle-green p-4 mb-3 relative group hover:shadow-retro-lg transition-all">
+                          {/* Reduced font size (text-4xl) and icon size (w-8 h-8) */}
+                          <div className="text-4xl font-display text-black text-shadow-retro mb-2">
+                            {item.step}
+                          </div>
+                          <item.icon className="w-8 h-8 text-black mx-auto" strokeWidth={2.5}/>
+                        </div>
+                        <p className="text-retro-white font-body text-base leading-snug px-1">
+                          {item.text}
+                        </p>
+                      </div>
+
+                      {/* Arrow connector */}
+                      {index < CYCLE.length - 1 && (
+                          <div
+                              className="hidden lg:block absolute top-1/2 -right-3 transform -translate-y-1/2 text-candle-green text-2xl font-display">
+                            ►
+                          </div>
+                      )}
+                    </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
           </div>
         </div>
       </section>
