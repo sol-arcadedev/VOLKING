@@ -1,6 +1,6 @@
-import React, {useState, useEffect} from 'react';
-import {motion} from 'framer-motion';
-import {RefreshCw, Crown, Wallet, TrendingUp} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { RefreshCw, Crown, Wallet, TrendingUp } from 'lucide-react';
 
 interface RewardPoolData {
     claimedCreatorFees: number;
@@ -93,20 +93,20 @@ export const RewardPoolDisplay: React.FC = () => {
         <div className="flex flex-col gap-4">
             {/* Current Reward */}
             <motion.div
-                initial={{opacity: 0, scale: 0.95}}
-                animate={{opacity: 1, scale: 1}}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
                 className="pixel-box p-4 bg-retro-black relative overflow-hidden"
             >
                 <motion.div
                     className="absolute inset-0 bg-candle-green opacity-5"
-                    animate={{opacity: [0.05, 0.1, 0.05]}}
-                    transition={{duration: 2, repeat: Infinity}}
+                    animate={{ opacity: [0.05, 0.1, 0.05] }}
+                    transition={{ duration: 2, repeat: Infinity }}
                 />
 
                 <div className="relative z-10">
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center space-x-2">
-                            <Crown className="w-5 h-5 text-candle-green"/>
+                            <Crown className="w-5 h-5 text-candle-green" />
                             <h3 className="text-sm font-display text-candle-green uppercase">
                                 VOLUME KING REWARD
                             </h3>
@@ -116,14 +116,14 @@ export const RewardPoolDisplay: React.FC = () => {
                             disabled={loading}
                             className="pixel-box bg-retro-black p-1.5 text-candle-green hover:bg-retro-gray-dark transition-colors disabled:opacity-50"
                         >
-                            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`}/>
+                            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
                         </button>
                     </div>
 
                     <motion.div
                         key={poolData.currentRewardPool}
-                        initial={{scale: 1.05}}
-                        animate={{scale: 1}}
+                        initial={{ scale: 1.05 }}
+                        animate={{ scale: 1 }}
                         className="mb-3"
                     >
                         <div className="text-4xl font-display text-candle-green text-shadow-retro mb-1">
@@ -142,7 +142,7 @@ export const RewardPoolDisplay: React.FC = () => {
 
                         <div className="flex justify-between items-center text-xs">
                             <span className="text-retro-white font-body flex items-center gap-1">
-                                <Wallet className="w-3 h-3 text-blue-400"/>
+                                <Wallet className="w-3 h-3 text-blue-400" />
                                 Base Reward:
                             </span>
                             <span className="text-blue-400 font-display">
@@ -152,7 +152,7 @@ export const RewardPoolDisplay: React.FC = () => {
 
                         <div className="flex justify-between items-center text-xs">
                             <span className="text-retro-white font-body flex items-center gap-1">
-                                <TrendingUp className="w-3 h-3 text-yellow-400"/>
+                                <TrendingUp className="w-3 h-3 text-yellow-400" />
                                 Claimed Fees:
                             </span>
                             <span className="text-yellow-400 font-display">
@@ -193,8 +193,7 @@ export const RewardPoolDisplay: React.FC = () => {
                     {/* Status */}
                     <div className="flex items-center justify-between text-xs mt-2">
                         <div className="flex items-center space-x-1">
-                            <div
-                                className={`w-1.5 h-1.5 rounded-full ${error ? 'bg-red-500' : poolData.roundInProgress ? 'bg-candle-green' : 'bg-yellow-500'} animate-pulse`}/>
+                            <div className={`w-1.5 h-1.5 rounded-full ${error ? 'bg-red-500' : poolData.roundInProgress ? 'bg-candle-green' : 'bg-yellow-500'} animate-pulse`} />
                             <span className="text-retro-white opacity-60 font-body">
                                 {error ? 'Offline' : poolData.roundInProgress ? 'Live' : 'Ending...'}
                             </span>
@@ -212,40 +211,43 @@ export const RewardPoolDisplay: React.FC = () => {
 
             {/* Fee Distribution */}
             <motion.div
-                initial={{opacity: 0, scale: 0.95}}
-                animate={{opacity: 1, scale: 1}}
-                transition={{delay: 0.1}}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 }}
                 className="pixel-box p-4 bg-retro-black"
             >
 
                 {/* Stats */}
                 <motion.div
-                    initial={{opacity: 0, scale: 0.95}}
-                    animate={{opacity: 1, scale: 1}}
-                    transition={{delay: 0.1}}
-                    className="pixel-box p-4 bg-retro-black"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className=""
                 >
                     <div className="grid grid-cols-2 gap-3">
-                        <div className="text-2xl font-display text-candle-green text-shadow-retro mb-1">
-                            {formatSOL(poolData.totalRewardsPaid)}
+                        <div className="pixel-box bg-retro-gray-dark p-3 text-center">
+                            <div className="text-2xl font-display text-candle-green text-shadow-retro mb-1">
+                                {formatSOL(poolData.totalRewardsPaid)}
+                            </div>
+                            <div className="text-sm text-retro-white opacity-70 font-body">
+                                Rewards Paid (SOL)
+                            </div>
                         </div>
-                        <div className="text-sm text-retro-white opacity-70 font-body">
-                            Rewards Paid (SOL)
-                        </div>
-                    </div>
-                    <div className="pixel-box bg-retro-gray-dark p-3 text-center">
-                        <div className="text-2xl font-display text-orange-500 text-shadow-retro mb-1">
-                            {poolData.totalSupplyBurned > 1000000
-                                ? `${(poolData.totalSupplyBurned / 1000000).toFixed(2)}M`
-                                : poolData.totalSupplyBurned > 1000
-                                    ? `${(poolData.totalSupplyBurned / 1000).toFixed(2)}K`
-                                    : poolData.totalSupplyBurned.toFixed(0)}
-                        </div>
-                        <div className="text-sm text-retro-white opacity-70 font-body">
-                            Supply Burned
+                        <div className="pixel-box bg-retro-gray-dark p-3 text-center">
+                            <div className="text-2xl font-display text-orange-500 text-shadow-retro mb-1">
+                                {poolData.totalSupplyBurned > 1000000
+                                    ? `${(poolData.totalSupplyBurned / 1000000).toFixed(2)}M`
+                                    : poolData.totalSupplyBurned > 1000
+                                        ? `${(poolData.totalSupplyBurned / 1000).toFixed(2)}K`
+                                        : poolData.totalSupplyBurned.toFixed(0)}
+                            </div>
+                            <div className="text-sm text-retro-white opacity-70 font-body">
+                                Supply Burned
+                            </div>
                         </div>
                     </div>
                 </motion.div>
+
             </motion.div>
         </div>
     );
