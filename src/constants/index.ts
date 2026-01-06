@@ -58,7 +58,7 @@ export const VOLKING_CYCLE_STEPS = [
   {
     title: 'Next Round Seeded',
     description:
-        'The remaining 5% of fees becomes the base reward for the next round, which starts immediately—new chance to win every cycle.',
+        'The remaining 5% of reward fees becomes the base reward for the next round, which starts immediately—new chance to win every cycle.',
     color: 'text-orange-500',
     bgColor: 'bg-orange-500',
   },
