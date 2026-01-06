@@ -6,7 +6,12 @@ import { executeBuybackAndBurn } from './buybackService.js';
 import { FEATURES } from '../config/features.js';
 import { FEE_DISTRIBUTION } from '../config/constants.js';
 
-export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopFeeClaimingInterval) {
+export async function handleRoundEnd(
+    roundState,
+    startFeeClaimingInterval,
+    stopFeeClaimingInterval,
+    autoStartNext = false  // ← New parameter for auto-start
+) {
     console.log('\n🎊 ===== ROUND END =====\n');
     console.log(`Round ${roundState.roundNumber} ending...`);
 
@@ -41,9 +46,13 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
     console.log(`   TOTAL Winner Reward: ${winnerReward.toFixed(4)} SOL`);
     console.log(`   Next Round Base (5% of fees): ${fivePercentOfFees.toFixed(4)} SOL`);
 
+    // ============================================
+    // NO WINNER SCENARIO
+    // ============================================
     if (!winner) {
         console.log('⚪ No trades this round, no winner');
 
+        // Step 1: Distribute fees (if any)
         if (FEATURES.FEE_COLLECTION && roundState.claimedCreatorFees > 0) {
             console.log('\n📤 Distributing fees...');
             const distribution = await distributeFees(roundState.claimedCreatorFees);
@@ -61,10 +70,10 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
 
             console.log('⏳ Waiting for distribution transactions to confirm...');
             await new Promise(resolve => setTimeout(resolve, 5000));
-
             console.log('✅ Fee distribution confirmed on-chain');
         }
 
+        // Step 2: Update state for next round
         roundState.baseReward = fivePercentOfFees;
         roundState.totalRoundsCompleted++;
         roundState.roundNumber++;
@@ -80,22 +89,47 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
 
         roundState.resetForNewRound(false);
 
-        console.log('\n✅ Round complete - Ready to start next round');
-        console.log('⚠️  Next round will NOT start automatically');
-        console.log('📌 Admin must manually start next round after verifying all transactions');
+        // Step 3: Auto-start next round if enabled
+        if (autoStartNext) {
+            console.log('\n🔄 AUTO-STARTING NEXT ROUND...');
+            roundState.currentRoundStart = Date.now();
+            roundState.roundInProgress = true;
+            startFeeClaimingInterval();
 
-        return {
-            success: true,
-            noWinner: true,
-            nextBaseReward: roundState.baseReward,
-            readyForNextRound: true,
-        };
+            console.log(`✅ Round ${roundState.roundNumber} started automatically`);
+            console.log(`💰 Base reward: ${roundState.baseReward.toFixed(4)} SOL`);
+            console.log(`⏰ Round started at: ${new Date(roundState.currentRoundStart).toLocaleTimeString()}`);
+
+            return {
+                success: true,
+                noWinner: true,
+                autoStarted: true,
+                nextBaseReward: roundState.baseReward,
+                roundNumber: roundState.roundNumber,
+                roundStartTime: roundState.currentRoundStart,
+            };
+        } else {
+            console.log('\n✅ Round complete - Ready to start next round');
+            console.log('⚠️  Next round will NOT start automatically');
+            console.log('📌 Admin must manually start next round after verifying all transactions');
+
+            return {
+                success: true,
+                noWinner: true,
+                nextBaseReward: roundState.baseReward,
+                readyForNextRound: true,
+            };
+        }
     }
 
+    // ============================================
+    // WINNER EXISTS SCENARIO
+    // ============================================
     console.log(`\n🏆 Winner: ${winner.wallet.substring(0, 8)}...`);
     console.log(`   Volume: ${winner.volume.toFixed(4)} SOL`);
     console.log(`   Reward: ${winnerReward.toFixed(4)} SOL`);
 
+    // Step 1: Distribute fees
     let distribution = null;
     if (FEATURES.FEE_COLLECTION && roundState.claimedCreatorFees > 0) {
         console.log('\n📤 Distributing fees...');
@@ -117,10 +151,10 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
 
         console.log('⏳ Waiting for distribution transactions to confirm...');
         await new Promise(resolve => setTimeout(resolve, 5000));
-
         console.log('✅ Fee distribution confirmed on-chain');
     }
 
+    // Step 2: Send reward to winner
     let rewardSignature = null;
     if (FEATURES.REWARD_DISTRIBUTION && winnerReward >= 0.001) {
         console.log('\n💸 Sending reward to winner...');
@@ -169,6 +203,7 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
     console.log('\n⏳ Waiting for reward transaction to confirm...');
     await new Promise(resolve => setTimeout(resolve, 3000));
 
+    // Step 3: Execute buyback & burn
     let burnResult = { success: false, tokensBurned: 0 };
     if (FEATURES.BUYBACK_BURN && distribution && distribution.success && distribution.buybackBurn > 0) {
         console.log('\n🔥 Executing buyback & burn...');
@@ -195,6 +230,7 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
         }
     }
 
+    // Step 4: Record winner in database
     await db.saveWinner({
         wallet: winner.wallet,
         volume: winner.volume,
@@ -219,6 +255,7 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
     console.log(`🏆 Winner recorded: ${winner.wallet.substring(0, 8)}... with ${winner.volume.toFixed(4)} SOL volume, reward: ${winnerReward.toFixed(4)} SOL`);
     console.log(`💰 Total rewards paid all-time: ${roundState.totalRewardsPaid.toFixed(4)} SOL`);
 
+    // Step 5: Prepare for next round
     roundState.baseReward = fivePercentOfFees;
     roundState.totalRoundsCompleted++;
 
@@ -243,18 +280,44 @@ export async function handleRoundEnd(roundState, startFeeClaimingInterval, stopF
 
     roundState.resetForNewRound(true);
 
-    console.log('\n⚠️  Next round will NOT start automatically');
-    console.log('📌 Admin must manually start next round after verifying all transactions');
+    // Step 6: Auto-start next round if enabled
+    if (autoStartNext) {
+        console.log('\n🔄 AUTO-STARTING NEXT ROUND...');
+        roundState.currentRoundStart = Date.now();
+        roundState.roundInProgress = true;
+        startFeeClaimingInterval();
 
-    return {
-        success: true,
-        winner: winner.wallet,
-        winnerVolume: winner.volume,
-        winnerReward,
-        rewardSignature,
-        distribution,
-        burnResult,
-        nextBaseReward: roundState.baseReward,
-        readyForNextRound: true,
-    };
+        console.log(`✅ Round ${roundState.roundNumber} started automatically`);
+        console.log(`💰 Base reward: ${roundState.baseReward.toFixed(4)} SOL`);
+        console.log(`⏰ Round started at: ${new Date(roundState.currentRoundStart).toLocaleTimeString()}`);
+
+        return {
+            success: true,
+            autoStarted: true,
+            winner: winner.wallet,
+            winnerVolume: winner.volume,
+            winnerReward,
+            rewardSignature,
+            distribution,
+            burnResult,
+            nextBaseReward: roundState.baseReward,
+            roundNumber: roundState.roundNumber,
+            roundStartTime: roundState.currentRoundStart,
+        };
+    } else {
+        console.log('\n⚠️  Next round will NOT start automatically');
+        console.log('📌 Admin must manually start next round after verifying all transactions');
+
+        return {
+            success: true,
+            winner: winner.wallet,
+            winnerVolume: winner.volume,
+            winnerReward,
+            rewardSignature,
+            distribution,
+            burnResult,
+            nextBaseReward: roundState.baseReward,
+            readyForNextRound: true,
+        };
+    }
 }

@@ -45,6 +45,7 @@ app.use(express.json());
 const roundState = new RoundState();
 let feeClaimInterval = null;
 let cacheCleanupInterval = null;
+let roundTimerInterval = null;
 
 let systemActive = false; // System starts INACTIVE by default
 
@@ -68,6 +69,7 @@ function startSystem() {
   // Start intervals
   startFeeClaimingInterval();
   startCacheCleanup();
+  startRoundTimer();
 
   console.log('✅ System started successfully');
   console.log(`📊 Current round: ${roundState.roundNumber}`);
@@ -95,6 +97,7 @@ function stopSystem() {
   // Stop all intervals
   stopFeeClaimingInterval();
   stopCacheCleanup();
+  stopRoundTimer();
 
   console.log('✅ System stopped successfully - No wallet operations will execute');
 
@@ -104,14 +107,70 @@ function stopSystem() {
   };
 }
 
+function startRoundTimer() {
+  if (roundTimerInterval) {
+    clearTimeout(roundTimerInterval);
+  }
+
+  const roundDuration = TIMING.ROUND_DURATION;
+
+  roundTimerInterval = setTimeout(async () => {
+    if (!systemActive || !roundState.roundInProgress) {
+      console.log('⏰ Timer expired but system inactive or round not in progress');
+      return;
+    }
+
+    console.log('⏰ Round time expired - ending round automatically');
+
+    // End round with auto-start enabled
+    const result = await handleRoundEnd(
+        roundState,
+        startFeeClaimingInterval,
+        stopFeeClaimingInterval,
+        true  // ← Enable auto-start next round
+    );
+
+    // Check if round successfully auto-started
+    if (result.autoStarted) {
+      console.log(`🔄 Round ${roundState.roundNumber} auto-started successfully`);
+      // Restart the timer for the new round
+      startRoundTimer();
+      console.log(`⏰ New timer started for round ${roundState.roundNumber}`);
+    } else if (result.error) {
+      console.log('❌ Round ended with errors - system paused');
+      console.log(`   Error: ${result.error}`);
+      systemActive = false;
+      stopFeeClaimingInterval();
+      stopCacheCleanup();
+    } else {
+      console.log('❌ Round ended but next round did not auto-start');
+      systemActive = false;
+      stopFeeClaimingInterval();
+      stopCacheCleanup();
+    }
+  }, roundDuration);
+
+  console.log(`⏰ Round timer set for ${roundDuration / 60000} minutes`);
+}
+
+function stopRoundTimer() {
+  if (roundTimerInterval) {
+    clearTimeout(roundTimerInterval);
+    roundTimerInterval = null;
+    console.log('⏸️  Stopped round timer');
+  }
+}
+
 function getSystemStatus() {
   return {
     active: systemActive,
     feeClaimingActive: feeClaimInterval !== null,
     cacheCleanupActive: cacheCleanupInterval !== null,
+    roundTimerActive: roundTimerInterval !== null,
     currentRound: roundState.roundNumber,
     baseReward: roundState.baseReward,
-    roundInProgress: roundState.roundInProgress
+    roundInProgress: roundState.roundInProgress,
+    roundStartTime: roundState.currentRoundStart,
   };
 }
 
@@ -189,7 +248,7 @@ function stopCacheCleanup() {
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'VOLKING API v7 - Manual Round Management with Transaction Verification',
+    message: 'VOLKING API v8 - Automated Round Management with Auto-Restart',
     systemStatus: systemActive ? 'ACTIVE' : 'INACTIVE',
     volumeUnit: 'SOL',
     feeDistribution: {
@@ -209,17 +268,20 @@ app.get('/', (req, res) => {
       feeDistribution: FEATURES.FEE_COLLECTION ? 'ENABLED' : 'DISABLED',
       rewardDistribution: FEATURES.REWARD_DISTRIBUTION ? 'ENABLED' : 'DISABLED',
       buybackBurn: FEATURES.BUYBACK_BURN ? 'ENABLED' : 'DISABLED',
-      autoRoundStart: 'DISABLED - Manual start required after verification',
+      autoRoundEnd: 'ENABLED - Timer triggers automatic round end',
+      autoRoundRestart: 'ENABLED - Next round starts after all transactions complete',
     },
     features: [
       'Admin control to start/stop system',
+      'Automatic round timer - rounds end after configured duration',
+      'Automatic round restart after successful completion',
       'Automatic fee claiming every 1 minute via PumpPortal (when active)',
       'Real-time reward pool updates',
       'Automatic fee distribution (70/15/5/10)',
       'Automatic reward to winner',
       'Automatic buyback & burn via Jupiter',
       'Real-time volume tracking via Helius webhooks',
-      'Manual round end with transaction verification required',
+      'Manual round end option for emergency situations',
       'Emergency stop functionality',
     ],
     endpoints: {
@@ -235,8 +297,8 @@ app.get('/', (req, res) => {
     adminEndpoints: {
       startSystem: 'POST /api/admin/start-system',
       stopSystem: 'POST /api/admin/stop-system',
-      systemStatus: 'GET /api/admin/system-status',
-      endRound: 'POST /api/admin/end-round',
+      systemStatus: 'POST /api/admin/system-status',
+      endRound: 'POST /api/admin/end-round (manual emergency end)',
       claimFees: 'POST /api/admin/claim-fees',
       updateSignature: 'POST /api/admin/update-signature',
       updateBurn: 'POST /api/admin/update-burn',
@@ -285,7 +347,7 @@ async function initializeServer() {
     console.log('🔴 SYSTEM IS INACTIVE - Waiting for admin to start');
     console.log('📝 Use POST /api/admin/start-system to begin operations');
     console.log('⚠️  No automated logic will run until system is started');
-    console.log('⚠️  Rounds will NOT automatically advance - manual end-round required');
+    console.log('✨ Once started, rounds will automatically cycle indefinitely');
     console.log('');
 
   } catch (error) {
@@ -310,7 +372,8 @@ initializeServer().then(() => {
     console.log('');
     console.log('⚠️  IMPORTANT: System will NOT start automatically');
     console.log('👉 Use POST /api/admin/start-system to begin operations');
-    console.log('👉 Use POST /api/admin/end-round to manually end round after verifying transactions');
+    console.log('🔄 Once started, rounds will cycle automatically');
+    console.log('👉 Use POST /api/admin/end-round only for emergency manual intervention');
     console.log('');
   });
 }).catch((error) => {
@@ -326,6 +389,7 @@ process.on('SIGTERM', async () => {
   console.log('\n👋 SIGTERM received, shutting down gracefully...');
   stopFeeClaimingInterval();
   stopCacheCleanup();
+  stopRoundTimer();
   await db.closeDatabase();
   process.exit(0);
 });
@@ -334,6 +398,7 @@ process.on('SIGINT', async () => {
   console.log('\n👋 SIGINT received, shutting down gracefully...');
   stopFeeClaimingInterval();
   stopCacheCleanup();
+  stopRoundTimer();
   await db.closeDatabase();
   process.exit(0);
 });
