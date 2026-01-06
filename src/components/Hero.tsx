@@ -54,10 +54,6 @@ export const Hero: React.FC = () => {
               TRADE. COMPETE. WIN.
             </p>
 
-            <p className="text-lg font-body text-candle-green-dark mb-6">
-              &gt; EVERY 15 MINUTES = NEW KING
-            </p>
-
             {/* What is VOLKING Explanation */}
             <div className="pixel-box p-6 mb-8 max-w-3xl mx-auto">
               <h3 className="text-xl font-display text-candle-green mb-4 uppercase">

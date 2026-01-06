@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Zap, Clock, CheckCircle, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 interface RewardStats {
   totalRounds: number;
@@ -46,38 +46,6 @@ export const Rewards: React.FC = () => {
     const interval = setInterval(fetchStats, 30000);
     return () => clearInterval(interval);
   }, []);
-
-  const rewardFeatures = [
-    {
-      icon: Trophy,
-      title: 'Winner Takes All',
-      description: 'The volume leader receives 15% of the reward wallet balance when the round ends. Pure skill-based rewards.',
-      color: 'text-candle-green',
-      bgColor: 'bg-candle-green'
-    },
-    {
-      icon: Clock,
-      title: 'Instant Distribution',
-      description: 'Rewards are distributed automatically within seconds of round completion. No waiting, no manual claims.',
-      color: 'text-blue-400',
-      bgColor: 'bg-blue-400'
-    },
-    {
-      icon: CheckCircle,
-      title: 'Transparent & On-Chain',
-      description: 'All transactions are verifiable on Solscan. Everything is on-chain.',
-      color: 'text-yellow-400',
-      bgColor: 'bg-yellow-400'
-    },
-    {
-      icon: Zap,
-      title: 'Continuous Rounds',
-      description: 'New round starts after the last one ends. Always an opportunity to win and earn rewards.',
-      color: 'text-orange-500',
-      bgColor: 'bg-orange-500'
-    },
-  ];
-
   const formatSOL = (amount: number): string => {
     if (amount >= 1000) {
       return `${(amount / 1000).toFixed(2)}K`;
@@ -107,38 +75,6 @@ export const Rewards: React.FC = () => {
               Compete for <span className="text-candle-green">SOL rewards</span> every 15 minutes. Trade your way up and become the VOLKING.
             </p>
           </motion.div>
-
-          {/* Reward Features */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
-            {rewardFeatures.map((feature, index) => (
-                <motion.div
-                    key={feature.title}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{ y: -8, transition: { duration: 0.2 } }}
-                    className="pixel-box p-6 bg-retro-gray-dark relative overflow-hidden group card-hover"
-                >
-                  <div className={`absolute inset-0 ${feature.bgColor} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
-
-                  <div className="relative">
-                    <div className={`pixel-box ${feature.bgColor} p-4 w-20 h-20 mx-auto mb-6 flex items-center justify-center`}>
-                      <feature.icon className="w-10 h-10 text-black" strokeWidth={2.5} />
-                    </div>
-                    <h3 className={`text-xl font-display ${feature.color} mb-4 uppercase text-shadow-retro text-center`}>
-                      {feature.title}
-                    </h3>
-                    <p className="text-retro-white font-body text-base leading-relaxed text-center">
-                      {feature.description}
-                    </p>
-                  </div>
-
-                  <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-candle-green opacity-50" />
-                  <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-candle-green opacity-50" />
-                </motion.div>
-            ))}
-          </div>
 
           {/* Section Divider */}
           <div className="section-divider mb-20" />
