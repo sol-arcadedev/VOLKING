@@ -1,5 +1,5 @@
 // ============================================
-// FILE: src/controllers/webhookController.js - UPDATED WITH SYSTEM CHECK
+// FILE: src/controllers/webhookController.js - SIMPLE LOGGING VERSION
 // ============================================
 
 import { processTransaction } from '../services/webhookProcessor.js';
@@ -18,19 +18,24 @@ export function handleWebhook(roundState, getSystemActiveStatus) {
                 message: systemActive ? 'Transaction processed' : 'System inactive - transaction ignored'
             });
 
+            // Log basic webhook info - ALWAYS shown
+            const transactions = Array.isArray(req.body) ? req.body : [req.body];
+            const txCount = transactions.length;
+            const timestamp = new Date().toLocaleTimeString();
+
+            // Get signature from first transaction
+            const signature = transactions[0]?.signature || 'unknown';
+            const shortSig = signature.length > 16 ? `${signature.substring(0, 8)}...${signature.substring(signature.length - 8)}` : signature;
+
+            console.log(`📨 [${timestamp}] Webhook received: ${txCount} tx | System: ${systemActive ? '🟢 ACTIVE' : '🔴 INACTIVE'}`);
+            console.log(`   🔗 Signature: ${shortSig}`);
+            console.log(`   🔍 Solscan: https://solscan.io/tx/${signature}`);
+
             // Only process if system is active
             if (!systemActive) {
-                console.log('⏸️  Webhook received but system is INACTIVE - transaction ignored');
+                console.log('   ⏸️  Transaction ignored - system inactive');
                 return;
             }
-
-            const shouldLog = Math.random() < 0.01;
-
-            if (shouldLog) {
-                console.log('📨 Webhook received! (sampled log)');
-            }
-
-            const transactions = Array.isArray(req.body) ? req.body : [req.body];
 
             let totalProcessed = 0;
             let totalExcluded = 0;
@@ -41,12 +46,15 @@ export function handleWebhook(roundState, getSystemActiveStatus) {
                 totalExcluded += result.excluded;
             }
 
-            if (shouldLog) {
-                console.log(`✅ Traders: ${roundState.volumeData.size}, SOL volume: ${roundState.stats.totalSolVolume.toFixed(4)}, Reward pool: ${calculateCurrentReward(roundState.baseReward, roundState.claimedCreatorFees).toFixed(4)}`);
+            // Show result if any transactions were processed or excluded
+            if (totalProcessed > 0 || totalExcluded > 0) {
+                console.log(`   ✅ Processed: ${totalProcessed} | Excluded: ${totalExcluded} | Traders: ${roundState.volumeData.size} | Volume: ${roundState.stats.totalSolVolume.toFixed(4)} SOL`);
+            } else {
+                console.log('   ⏭️  No relevant transactions found');
             }
 
         } catch (error) {
-            console.error('❌ Error:', error);
+            console.error('❌ Webhook error:', error.message);
             // Already sent 200 response, so don't send another
         }
     };
